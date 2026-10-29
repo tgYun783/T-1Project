@@ -38,3 +38,23 @@ export function parseSignupBody(body: unknown): SignupInput {
   }
   return { email, password };
 }
+
+// 로그인은 형식(문자열 여부)만 본다: 8자 규칙을 걸면 짧은 시드 비밀번호로 로그인이 막힌다.
+export function parseLoginBody(body: unknown): SignupInput {
+  const obj = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
+  const details: FieldError[] = [];
+
+  const email = typeof obj.email === 'string' ? obj.email.trim().toLowerCase() : undefined;
+  if (!email) {
+    details.push({ field: 'email', reason: '이메일을 입력해 주세요.' });
+  }
+  const password = typeof obj.password === 'string' ? obj.password : undefined;
+  if (!password) {
+    details.push({ field: 'password', reason: '비밀번호를 입력해 주세요.' });
+  }
+
+  if (!email || !password) {
+    throw new BadRequestException({ message: '입력값을 확인해 주세요.', details });
+  }
+  return { email, password };
+}

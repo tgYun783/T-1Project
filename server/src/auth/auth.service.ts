@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
 import { Model } from 'mongoose';
@@ -7,6 +7,8 @@ import { User, UserDocument, UserRole } from '../users/user.schema';
 // 명세 02 결정: bcrypt cost 10.
 const BCRYPT_ROUNDS = 10;
 const MONGO_DUPLICATE_KEY = 11000;
+// 두 실패 경로가 한 상수를 써야 메시지가 갈리지 않는다.
+const INVALID_CREDENTIALS_MESSAGE = '이메일 또는 비밀번호가 올바르지 않습니다.';
 
 export interface PublicUser {
   id: string;
@@ -40,5 +42,14 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  // 없는 이메일·틀린 비밀번호를 같은 예외로 돌려준다: 응답이 갈리면 가입된 이메일을 알아낼 수 있다.
+  async login(email: string, password: string): Promise<UserDocument> {
+    const doc = await this.userModel.findOne({ email: email.trim().toLowerCase() }).exec();
+    if (!doc || !(await bcrypt.compare(password, doc.passwordHash))) {
+      throw new UnauthorizedException({ code: 'INVALID_CREDENTIALS', message: INVALID_CREDENTIALS_MESSAGE });
+    }
+    return doc;
   }
 }
