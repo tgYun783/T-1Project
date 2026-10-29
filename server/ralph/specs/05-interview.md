@@ -9,7 +9,7 @@
 - **프롬프트 분리**: 본질문 생성·답변 판단 프롬프트는 `server/src/ai/prompts/interview-questions.prompt.ts`, `interview-judge.prompt.ts`에 둔다(04 규칙과 같음). 응답 JSON 형식 지시도 프롬프트 파일 안에.
 
 ## 완료 기준
-- [ ] C5-1: `POST /api/interviews` {coverLetterId} → 201, `mainQuestions` 4개(실무 2·임원 2), `currentQuestion`이 첫 본질문, `status:in_progress`. 남의 자소서 → 404. AI 실패 시 fallback 4개 + `usedFallbackQuestions:true`로 201.
+- [ ] C5-1: `POST /api/interviews` {coverLetterId} → 자소서가 `status:"draft"`면 409 `COVER_LETTER_NOT_FINAL`(Agent 기본값, 팀 확인 대기). final이면 201, `mainQuestions` 4개(실무 2·임원 2), `currentQuestion`이 첫 본질문, `status:in_progress`. 남의 자소서 → 404. AI 실패 시 fallback 4개 + `usedFallbackQuestions:true`로 201.
 - [ ] C5-2: `GET /api/interviews/:id`를 두 번 불러도 질문·순서가 같다. `GET /api/interviews`는 내 세션 목록(최신순, 필드 api.md).
 - [ ] C5-3: `POST /api/interviews/:id/answers` {questionId,text,inputMode} → 답변 저장, AI 판단 결과에 따라 `next.action`이 `follow_up`(꼬리질문이 currentQuestion, 같은 면접관) 또는 `next_main`. questionId ≠ currentQuestion → 400. text 공백 → 400. finished 세션 → 409 INTERVIEW_FINISHED.
 - [ ] C5-4: 한도 검사 — 본질문당 꼬리질문 2개를 썼으면 AI가 follow_up을 내도 next_main. 전체 질문 12개 또는 시작 후 12분 도달 → `finished`, `endReason` `question_limit`/`time_limit`. 마지막 본질문 끝 → `all_done`. 테스트는 시간을 주입(clock mock).

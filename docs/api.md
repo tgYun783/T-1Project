@@ -25,7 +25,7 @@
 - 검증 실패 → `400 { code: "VALIDATION", message, details?: [{ field, reason }] }`.
 - AI 실패 → `502 { code: "AI_UNAVAILABLE" }` (키 없음 포함). 앱은 키가 비어도 기동한다.
 - 없는 경로 → `404` (500 아님). API 외 경로는 프런트 `index.html`로 보내되, `/api/*`·`/__health`는 제외.
-- 오류 코드 목록: `UNAUTHENTICATED`, `NOT_FOUND`, `VALIDATION`, `EMAIL_TAKEN`, `INVALID_CREDENTIALS`, `AI_UNAVAILABLE`, `INTERVIEW_FINISHED`, `INTERVIEW_LIMIT`, `EMPTY_TRANSCRIPT`.
+- 오류 코드 목록: `UNAUTHENTICATED`, `NOT_FOUND`, `VALIDATION`, `EMAIL_TAKEN`, `INVALID_CREDENTIALS`, `AI_UNAVAILABLE`, `INTERVIEW_FINISHED`, `INTERVIEW_LIMIT`, `EMPTY_TRANSCRIPT`, `COVER_LETTER_NOT_FINAL`, `SUGGESTION_STALE`.
 
 ## 2. 상태 확인
 
@@ -57,7 +57,7 @@ DB 연결 여부와 무관하게 서버가 떠 있으면 200. (DB 상태는 `GET
 
 ## 4. 이력서 (F2)
 
-이력서 = **기본 텍스트**(가진 이력서 내용을 붙여 넣은 글, 필수) + **선택 태그별 글**(아래 9개 키 중 고른 것, 0개 가능). (학생 답 2026-10-30)
+이력서 = **기본 텍스트** 하나(가진 이력서 내용을 텍스트 폼에 입력, 필수). 9개 항목은 이력서 입력이 아니라 **자소서 생성 때 문항 선택**에 쓴다. (학생 답 2026-10-30)
 
 템플릿 항목 키(고정 9개): `intro_1min`, `job_success`, `job_preparation`, `motivation`, `aspiration`, `personality`, `crisis`, `growth`, `teamwork`.
 한글 이름: 1분 자기소개 / 직무 관련 성공경험 / 직무를 위해 준비한 사항 / 지원동기 / 입사 후 포부 / 성격의 장단점 / 위기 극복 경험 / 성장과정 / 팀워크 및 협업경험.
@@ -68,25 +68,27 @@ DB 연결 여부와 무관하게 서버가 떠 있으면 200. (DB 상태는 `GET
 ```
 ### `GET /api/resume`
 ```json
-200 { "resume": { "id", "baseText", "items": [ { "key", "label", "content" } ], "updatedAt" } | null }
+200 { "resume": { "id", "baseText", "updatedAt" } | null }
 ```
 ### `PUT /api/resume`
-기본 텍스트와 고른 태그 전체를 갈아 끼운다(저장 뒤 수정·태그 추가는 같은 API로).
 ```json
-요청 { "baseText": "붙여 넣은 이력서 글", "items": [ { "key": "job_success", "content": "..." }, ... ] }
+요청 { "baseText": "가진 이력서 내용" }
 200  { "resume": {...} }
-400  VALIDATION — baseText가 빈 문자열(공백만), content가 빈 문자열인 태그, 모르는 key, 중복 key. items는 []여도 됨
+400  VALIDATION — baseText가 빈 문자열(공백만)
 ```
-F2 완료 조건: 다시 접속해도 같은 기본 텍스트·태그·내용. 기본 텍스트가 비면 경고(400)로 막힘.
+F2 완료 조건: 다시 접속해도 같은 기본 텍스트. 빈 저장은 경고(400)로 막힘.
 
 ## 5. 자기소개서 (F3, F4)
 
+흐름(학생 답 2026-10-30): 9개 항목 중 고른 것마다 AI가 문항을 생성 → 수정 가능한 폼에서 **직접 수정 / AI 다듬기 / 완료**. 완료(`final`)된 자소서만 모의면접에 쓸 수 있다(Agent 기본값).
 ```json
 CoverLetter {
-  "id", "title",                 // title은 없으면 서버가 "자기소개서 N"으로
-  "body": "본문 전체",
+  "id", "title",                      // title 없으면 "자기소개서 N"
+  "status": "draft" | "final",
   "source": "generated" | "uploaded",
-  "resumeSnapshot": { items: [...] } | null,   // generated일 때 바탕이 된 이력서 복사
+  "sections": [ { "key": "job_success", "label": "직무 관련 성공경험", "body": "..." } ],   // uploaded는 key "uploaded" 하나
+  "resumeSnapshot": { "baseText" } | null,
+  "revisions": [ { "at", "kind": "edit"|"refine"|"suggestion", "sectionKey"?, "before", "after" } ],
   "createdAt", "updatedAt"
 }
 ```
@@ -94,17 +96,36 @@ CoverLetter {
 ### `POST /api/cover-letters` (F4 등록)
 ```json
 요청 { "title"?: string, "body": string }
-201  { "coverLetter": {...} }
+201  { "coverLetter": { ..., "status": "final", "source": "uploaded", "sections": [ { "key": "uploaded", "label": "자기소개서", "body" } ] } }
 400  VALIDATION — body가 비었거나 공백만
 ```
-### `POST /api/cover-letters/generate` (F3 초안 생성)
+### `POST /api/cover-letters/generate` (F3 문항별 초안 생성)
 ```json
-요청 { "title"?: string }                 // 바탕은 저장된 내 이력서
-201  { "coverLetter": { ..., "source": "generated" } }
-400  VALIDATION — 이력서가 없거나 항목 0개
-502  AI_UNAVAILABLE — 생성 실패. 저장하지 않음(F3 학생 답: 에러 표시)
+요청 { "title"?: string, "keys": ["job_success", "teamwork"] }     // 9개 템플릿 키 중 고른 것, 1개 이상
+201  { "coverLetter": { ..., "status": "draft", "source": "generated", "sections": [고른 키마다 1개] } }
+400  VALIDATION — keys 비었음·모르는 키·중복 / 이력서 없음·baseText 비었음
+502  AI_UNAVAILABLE — 생성 실패. 저장하지 않음
 ```
-AI 규칙: 이력서에 없는 경험·성과를 넣지 않는다(프롬프트 제약). 초안 형식(문항별 / 한 덩어리)과 사용자 수정 가능 여부는 **학생 답 대기** → 결정되면 `PATCH /api/cover-letters/:id { body }` 추가.
+AI 호출 1회로 고른 문항 전부를 받는다. 이력서에 없는 경험·성과는 넣지 않는다(프롬프트 `server/src/ai/prompts/cover-letter-draft.prompt.ts`).
+### `PATCH /api/cover-letters/:id` (직접 수정)
+```json
+요청 { "title"?: string, "sections"?: [ { "key": "job_success", "body": "고친 글" } ] }
+200  { "coverLetter": {...} }        // revisions에 edit 추가. final이었으면 draft로 돌아감
+400  없는 key / 빈 body
+```
+### `POST /api/cover-letters/:id/refine` (AI 다듬기, 저장 안 함)
+```json
+요청 { "sectionKey": "job_success", "instruction"?: "200자 이내 지시(없으면 기본: 더 구체적이고 읽기 쉽게)" }
+200  { "sectionKey", "before", "after" }   // 사용자가 적용하면 PATCH로 저장, 취소하면 버림
+400  없는 sectionKey / instruction 200자 초과
+502  AI_UNAVAILABLE
+```
+새 경험·수치를 만들어 내지 않는다(프롬프트 `cover-letter-refine.prompt.ts`).
+### `POST /api/cover-letters/:id/finalize` (완료)
+```json
+200  { "coverLetter": { ..., "status": "final" } }
+400  VALIDATION — 비어 있는 문항이 있음(details에 key)
+```
 ### `GET /api/cover-letters/:id` → `200 { "coverLetter": {...} }` / `404`
 ### `DELETE /api/cover-letters/:id` → `204` (면접 세션이 참조하면 세션은 스냅샷을 가지므로 영향 없음). 필요 여부는 학생 답 대기.
 
@@ -128,9 +149,10 @@ Turn     { "question": Question, "answer": { "id", "text", "inputMode": "voice"|
 ```
 ### `POST /api/interviews` (F5 시작)
 ```json
-요청 { "coverLetterId" }
+요청 { "coverLetterId" }                  // status가 final인 자소서만
 201  { "interview": InterviewSession }     // currentQuestion = 첫 본질문. 질문 순서는 이때 랜덤으로 정해 저장
 404  coverLetterId 없음
+409  COVER_LETTER_NOT_FINAL — 아직 완료하지 않은 초안
 ```
 처리: AI 호출 1회로 본질문 4개(실무 2·임원 2) 생성 → 실패 시 기본 질문 템플릿 4개 + `usedFallbackQuestions: true`(201로 정상 진행). 응답 시간 목표 10초 이내.
 ### `GET /api/interviews` → `200 { "interviews": [ { id, coverLetterTitle, status, startedAt, finishedAt, endReason } ] }` (F8 지난 결과 목록)
@@ -201,8 +223,8 @@ Result {
 | 흐름 | 호출 순서 |
 | --- | --- |
 | S1 | `POST /api/auth/signup` |
-| S2 | `GET /api/resume/template` → `PUT /api/resume` → `GET /api/resume` |
-| S3 | `POST /api/cover-letters/generate` → `GET /api/cover-letters` |
+| S2 | `PUT /api/resume` → `GET /api/resume` |
+| S3 | `GET /api/resume/template` → `POST /api/cover-letters/generate` → `PATCH /api/cover-letters/:id`(직접 수정) → `POST .../finalize` → `GET /api/cover-letters` |
 | S4 | `POST /api/cover-letters` → `GET /api/cover-letters` → `GET /api/cover-letters/:id` |
 | S5 | `GET /api/cover-letters` → `POST /api/interviews` → `POST /api/interviews/:id/answers`(text) → `POST /api/interviews/:id/end` → `GET /api/interviews/:id/result` |
 | S6 | `GET /api/interviews` → `GET /api/interviews/:id/result` → `POST .../suggestions/:sid/accept` → `GET /api/cover-letters/:id` |
