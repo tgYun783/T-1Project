@@ -57,6 +57,8 @@ DB 연결 여부와 무관하게 서버가 떠 있으면 200. (DB 상태는 `GET
 
 ## 4. 이력서 (F2)
 
+이력서 = **기본 텍스트**(가진 이력서 내용을 붙여 넣은 글, 필수) + **선택 태그별 글**(아래 9개 키 중 고른 것, 0개 가능). (학생 답 2026-10-30)
+
 템플릿 항목 키(고정 9개): `intro_1min`, `job_success`, `job_preparation`, `motivation`, `aspiration`, `personality`, `crisis`, `growth`, `teamwork`.
 한글 이름: 1분 자기소개 / 직무 관련 성공경험 / 직무를 위해 준비한 사항 / 지원동기 / 입사 후 포부 / 성격의 장단점 / 위기 극복 경험 / 성장과정 / 팀워크 및 협업경험.
 
@@ -66,16 +68,16 @@ DB 연결 여부와 무관하게 서버가 떠 있으면 200. (DB 상태는 `GET
 ```
 ### `GET /api/resume`
 ```json
-200 { "resume": { "id", "items": [ { "key", "label", "content" } ], "updatedAt" } | null }
+200 { "resume": { "id", "baseText", "items": [ { "key", "label", "content" } ], "updatedAt" } | null }
 ```
 ### `PUT /api/resume`
-고른 항목 전체를 갈아 끼운다(저장 뒤 수정·항목 추가는 같은 API로).
+기본 텍스트와 고른 태그 전체를 갈아 끼운다(저장 뒤 수정·태그 추가는 같은 API로).
 ```json
-요청 { "items": [ { "key": "job_success", "content": "..." }, ... ] }
+요청 { "baseText": "붙여 넣은 이력서 글", "items": [ { "key": "job_success", "content": "..." }, ... ] }
 200  { "resume": {...} }
-400  VALIDATION — items가 0개, content가 빈 문자열(공백만)인 항목이 있음, 모르는 key, 중복 key
+400  VALIDATION — baseText가 빈 문자열(공백만), content가 빈 문자열인 태그, 모르는 key, 중복 key. items는 []여도 됨
 ```
-F2 완료 조건: 다시 접속해도 같은 항목·내용. 빈 저장은 경고(400)로 막힘.
+F2 완료 조건: 다시 접속해도 같은 기본 텍스트·태그·내용. 기본 텍스트가 비면 경고(400)로 막힘.
 
 ## 5. 자기소개서 (F3, F4)
 
