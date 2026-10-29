@@ -19,6 +19,9 @@ export function sessionSecretFromEnv(): string {
   return secret;
 }
 
+// 발급과 삭제(clearCookie)가 같은 옵션을 써야 브라우저가 같은 쿠키로 보고 지운다.
+export const SESSION_COOKIE_OPTIONS = { path: '/', httpOnly: true, sameSite: 'lax' } as const;
+
 // 세션을 앱과 같은 Mongo 연결의 sessions 컬렉션에 저장한다: 재시작해도 로그인이 유지되고 연결을 하나만 쓴다.
 export function createSessionMiddleware(connection: Connection): RequestHandler {
   return session({
@@ -26,7 +29,7 @@ export function createSessionMiddleware(connection: Connection): RequestHandler 
     secret: sessionSecretFromEnv(),
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, sameSite: 'lax' },
+    cookie: { ...SESSION_COOKIE_OPTIONS },
     store: MongoStore.create({
       client: connection.getClient(),
       dbName: connection.db?.databaseName,

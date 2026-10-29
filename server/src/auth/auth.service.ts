@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { User, UserDocument, UserRole } from '../users/user.schema';
 
 // 명세 02 결정: bcrypt cost 10.
@@ -51,5 +51,11 @@ export class AuthService {
       throw new UnauthorizedException({ code: 'INVALID_CREDENTIALS', message: INVALID_CREDENTIALS_MESSAGE });
     }
     return doc;
+  }
+
+  // 세션의 userId가 잘못된 형식이거나 삭제된 사용자면 null: 호출자가 401로 바꿔 500이 새지 않게 한다.
+  async findById(userId: string): Promise<UserDocument | null> {
+    if (!isValidObjectId(userId)) return null;
+    return this.userModel.findById(userId).exec();
   }
 }

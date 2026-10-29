@@ -1,6 +1,7 @@
-import { Body, Controller, HttpCode, Post, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AuthService, PublicUser, toPublicUser } from './auth.service';
+import { SESSION_COOKIE_OPTIONS } from './session';
 import { parseLoginBody, parseSignupBody } from './signup.validation';
 
 @Controller('auth')
@@ -30,5 +31,28 @@ export class AuthController {
     );
     req.session.userId = doc._id.toString();
     return { user: toPublicUser(doc) };
+  }
+
+  // 프런트가 로그인 여부를 확인하는 경로: 세션이 없거나 사용자가 사라졌으면 401 UNAUTHENTICATED.
+  @Get('me')
+  async me(@Req() req: Request): Promise<{ user: PublicUser }> {
+    const userId = req.session.userId;
+    const doc = userId ? await this.authService.findById(userId) : null;
+    if (!doc) {
+      throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: '로그인이 필요합니다.' });
+    }
+    return { user: toPublicUser(doc) };
+  }
+
+  // 서버 세션을 파기한 뒤 쿠키를 지운다: 쿠키만 지우면 훔친 sid로 계속 접근할 수 있다. 비로그인 호출도 204(멱등).
+  @Post('logout')
+  @HttpCode(204)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+    await new Promise<void>((resolve, reject) =>
+      req.session.destroy((err: unknown) =>
+        err ? reject(err instanceof Error ? err : new Error('세션 파기에 실패했습니다.')) : resolve(),
+      ),
+    );
+    res.clearCookie('sid', SESSION_COOKIE_OPTIONS);
   }
 }
