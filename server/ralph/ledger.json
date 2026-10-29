@@ -71,6 +71,53 @@
       "status": "pass",
       "fixCount": 1,
       "snapshot": "96c61ebe798fca17e05dc34d0772123b659e55db"
+    },
+    {
+      "id": "C2-1",
+      "spec": "02-auth.md",
+      "title": "`POST /api/auth/signup` {email,password} → 201 `{user:{id,email,role:\"취준생\",createdAt}}` + 세션 쿠키. 이메일 형식 오류·8자 미만 비밀번호 → 400 VALIDATION(details에 field). 중복 → 409 EMAIL_TAKEN. 응답에 비밀번호·해시 없음. e2e 테스트(supertest, mongodb-memory-server) 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "5a0083a6e52f0b13beeaa0e9a911e65e2ec4c90c"
+    },
+    {
+      "id": "C2-2",
+      "spec": "02-auth.md",
+      "title": "`POST /api/auth/login` → 200 + 쿠키. 틀린 비밀번호·없는 이메일 모두 `401 INVALID_CREDENTIALS`(같은 메시지). 시드 계정으로 로그인되는 테스트.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "6c4ae1c54c87baeea39e10d91fee57476c3d8305"
+    },
+    {
+      "id": "C2-3",
+      "spec": "02-auth.md",
+      "title": "`GET /api/auth/me` → 로그인 시 200 user, 아니면 401. `POST /api/auth/logout` → 204, 이후 `me`가 401.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "79a7000f66285283d47a3b63bfecef4469ad2531"
+    },
+    {
+      "id": "C2-4",
+      "spec": "02-auth.md",
+      "title": "AuthGuard가 적용된 보호 경로 예시(`GET /api/auth/me`)에 쿠키 없이 요청하면 401이고, 쿠키를 위조하면 401이다. 세션 저장이 Mongo 컬렉션 `sessions`에 남는다.",
+      "docker": false,
+      "status": "fail",
+      "fixCount": 0,
+      "snapshot": "f13b545a33a76a730a5c980416738c31cbf3eaa3"
+    },
+    {
+      "id": "C2-5",
+      "spec": "02-auth.md",
+      "title": "세션 쿠키는 `Secure`가 프로덕션(HTTPS)에서만 켜지도록 환경변수 `COOKIE_SECURE`(기본 false, compose에서 false)로 제어하고, compose 안 nginx 경유 요청에서 쿠키가 유지된다(`X-Forwarded-*` 신뢰 설정). README 환경변수 표 갱신.",
+      "docker": false,
+      "status": "todo",
+      "fixCount": 0,
+      "snapshot": null
     }
-  ]
+  ],
+  "stage": "02-auth.md",
+  "sweeps": 0
 }
