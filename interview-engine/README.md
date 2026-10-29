@@ -1,5 +1,9 @@
 # interview-engine
 
+> **상태(2026-10-30): 결정 대기.** 음성 모의면접(해법 3)의 보류/선택 유지가 정해지지 않았다(`docs/scope-open-items.md` A).
+> 현재 구현 범위(경험 발굴·사실 확정 → 경험 기반 자소서·제출 전 점검)의 **필수 의존성이 아니다.** 삭제하지 않고 보존한다.
+> 제출 전 점검에 재사용할 후보(`src/llm.ts` 등)는 `docs/proposals/current-scope-plan.md` 7절에 적었고, 재사용 여부는 아직 정하지 않았다.
+
 2:1 모의면접(실무 면접관·임원 면접관) 진행 로직이다. 설계는 [`docs/interview-design.md`](../docs/interview-design.md), 기능 명세는 `docs/problem.yaml`의 F5~F8, 흐름은 `docs/scenarios.yaml`의 S5·S6을 따른다.
 팀 결정(2026-10-29): 백엔드 **NestJS**, DB **MongoDB**, AI 모델 **`openai/gpt-6.1-terra`**.
 
