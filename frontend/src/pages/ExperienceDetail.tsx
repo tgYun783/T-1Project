@@ -308,7 +308,11 @@ function Header({
         />
       ) : (
         <div>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={() => setAdding(true)}>
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={() => setAdding(true)}
+          >
             단서 추가
           </button>
         </div>

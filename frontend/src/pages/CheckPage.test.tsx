@@ -93,9 +93,7 @@ describe('K 제출 전 점검', () => {
     await user.click(await screen.findByRole('link', { name: '자소서' }))
     await user.click(await screen.findByRole('link', { name: /가나다소프트 백엔드 지원/ }))
     await user.click(await screen.findByRole('button', { name: '제출 전 점검 시작' }))
-    expect(
-      await screen.findByRole('heading', { name: '점검할 문장' }, AI_WAIT),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '점검할 문장' }, AI_WAIT)).toBeInTheDocument()
     expect(await screen.findByText(FIRST_QUESTION, {}, AI_WAIT)).toBeInTheDocument()
     await user.type(screen.getByLabelText('답변'), S6_ANSWER)
     await user.click(screen.getByRole('button', { name: '답하기' }))
@@ -181,9 +179,7 @@ describe('K 제출 전 점검', () => {
       ),
     )
     renderApp(`/checks/${check.id}`, { loggedIn: true })
-    expect(
-      await screen.findByText('AI 호출에 실패했어요. 다시 시도해 주세요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('AI 호출에 실패했어요. 다시 시도해 주세요.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(await screen.findByText(FIRST_QUESTION, {}, AI_WAIT)).toBeInTheDocument()
   }, 10000)

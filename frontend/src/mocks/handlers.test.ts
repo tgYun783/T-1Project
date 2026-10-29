@@ -80,7 +80,12 @@ describe('목 API ① 경험 대화', () => {
     expect(res.question.text).toBe('그때 본인이 맡은 역할은 무엇이었나요?')
     expect(res.itemStatus.situation).toBe('explained')
     expect(res.newCandidates).toEqual([
-      expect.objectContaining({ item: 'situation', text, status: 'candidate', source: 'ai_unverified' }),
+      expect.objectContaining({
+        item: 'situation',
+        text,
+        status: 'candidate',
+        source: 'ai_unverified',
+      }),
     ])
 
     const conversation = await api.getConversation(id)

@@ -76,8 +76,7 @@ export const ITEM_QUESTIONS: Record<Item, string> = {
 
 function seed(): Db {
   const userId = 'u1'
-  const at = (day: number, minute = 0) =>
-    new Date(Date.UTC(2026, 9, day, 9, minute)).toISOString()
+  const at = (day: number, minute = 0) => new Date(Date.UTC(2026, 9, day, 9, minute)).toISOString()
 
   const fact = (
     id: string,
@@ -110,7 +109,9 @@ function seed(): Db {
   capstoneFacts.forEach(([item, text], i) => {
     capstoneMessages.push({ role: 'ai', text: ITEM_QUESTIONS[item], createdAt: at(20, i * 2) })
     capstoneMessages.push({ role: 'user', text, createdAt: at(20, i * 2 + 1) })
-    capstoneCard[item].push(fact(`seed-fact-c${i + 1}`, item, text, 'conversation', at(20, i * 2 + 1)))
+    capstoneCard[item].push(
+      fact(`seed-fact-c${i + 1}`, item, text, 'conversation', at(20, i * 2 + 1)),
+    )
   })
   capstoneMessages.push({ role: 'ai', text: ITEM_QUESTIONS.meaning, createdAt: at(20, 8) })
 
@@ -249,7 +250,11 @@ export function getFile(clueId: string) {
 }
 
 /** 저장용 경험에서 응답 모양(api.md Experience)만 꺼낸다. */
-export function toExperience({ userId: _userId, messages: _messages, ...experience }: StoredExperience): Experience {
+export function toExperience({
+  userId: _userId,
+  messages: _messages,
+  ...experience
+}: StoredExperience): Experience {
   return experience
 }
 

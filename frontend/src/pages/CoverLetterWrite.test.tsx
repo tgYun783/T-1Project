@@ -35,9 +35,10 @@ describe('I 문항별 작성', () => {
     expect(await screen.findByText(QUESTION)).toBeInTheDocument()
     expect(screen.getByText('응답 0 / 문항 1')).toBeInTheDocument()
     const rec = screen.getByRole('region', { name: '추천 경험 카드' })
-    expect(
-      await within(rec).findByRole('button', { name: CAPSTONE }, AI_WAIT),
-    ).toHaveAttribute('aria-pressed', 'false')
+    expect(await within(rec).findByRole('button', { name: CAPSTONE }, AI_WAIT)).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     expect(within(rec).getAllByText('직접 만든 기능과 결과가 문항과 맞아요')).toHaveLength(2)
     expect(screen.getByRole('button', { name: '이 문항 만들기' })).toBeDisabled()
   })
@@ -101,9 +102,10 @@ describe('I 문항별 작성', () => {
     expect(screen.getByText('팀장으로 범위를 정한 경험이 문항과 맞아요')).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: '문항 1' }))
     expect(await screen.findByText(QUESTION)).toBeInTheDocument()
-    expect(
-      await screen.findByRole('button', { name: CAPSTONE }, AI_WAIT),
-    ).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByRole('button', { name: CAPSTONE }, AI_WAIT)).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('응답을 고쳐 저장한 뒤 이 문항 만들기 → 확인창에서 바꾸기를 눌러야 바뀐다', async () => {
@@ -145,13 +147,9 @@ describe('I 문항별 작성', () => {
     )
     const user = userEvent.setup()
     renderApp(`/cover-letters/${letter.id}/items/${letter.items[0].id}`, { loggedIn: true })
-    expect(
-      await screen.findByText('AI 호출에 실패했어요. 다시 시도해 주세요.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('AI 호출에 실패했어요. 다시 시도해 주세요.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
-    expect(
-      await screen.findByRole('button', { name: CAPSTONE }, AI_WAIT),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: CAPSTONE }, AI_WAIT)).toBeInTheDocument()
   })
 
   it('S5: 새로 쓰기 → 입력 → 작성 시작 → 캡스톤 카드 켜기 → 이 문항 만들기 → 응답과 근거 카드', async () => {

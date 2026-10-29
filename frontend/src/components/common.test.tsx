@@ -152,7 +152,9 @@ describe('AI 호출 표시', () => {
     expect(screen.getByText('AI가 생각하는 중이에요')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '실행' })).toBeDisabled()
     finish()
-    await waitFor(() => expect(screen.queryByText('AI가 생각하는 중이에요')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByText('AI가 생각하는 중이에요')).not.toBeInTheDocument(),
+    )
   })
 })
 

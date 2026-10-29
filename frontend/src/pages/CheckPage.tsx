@@ -177,7 +177,10 @@ function CheckView({ initial }: { initial: Check }) {
           {sentences.length === 0 ? (
             <div className="row-pending rounded-row flex flex-col items-start gap-4 p-6">
               <p className="text-[15px]">점검할 주장 문장을 찾지 못했어요.</p>
-              <Link to={`/cover-letters/${check.coverLetterId}`} className="btn btn-sm btn-secondary">
+              <Link
+                to={`/cover-letters/${check.coverLetterId}`}
+                className="btn btn-sm btn-secondary"
+              >
                 자소서로 돌아가기
               </Link>
             </div>

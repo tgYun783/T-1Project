@@ -168,8 +168,7 @@ export const api = {
     request<{ fact: Fact }>('POST', `${exp(id)}/facts/${factId}/confirm`, input),
   updateFact: (id: string, factId: string, input: FactPatch) =>
     request<{ fact: Fact }>('PATCH', `${exp(id)}/facts/${factId}`, input),
-  deleteFact: (id: string, factId: string) =>
-    request<void>('DELETE', `${exp(id)}/facts/${factId}`),
+  deleteFact: (id: string, factId: string) => request<void>('DELETE', `${exp(id)}/facts/${factId}`),
   addFact: (id: string, input: { item: Item; text: string; source: FactSource; clueId?: string }) =>
     request<{ fact: Fact }>('POST', `${exp(id)}/facts`, input),
 

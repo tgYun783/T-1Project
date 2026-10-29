@@ -4,8 +4,16 @@ import { StageBlock, type Stage } from '@/components/StageBlock'
 
 const STEPS: { stage: Stage; title: string; text: string }[] = [
   { stage: 'experience', title: '1 경험 꺼내기', text: '대화로 경험을 풀어 쓰고 사실로 확정해요.' },
-  { stage: 'coverLetter', title: '2 자소서 쓰기', text: '확정한 경험 카드로 문항마다 초안을 만들어요.' },
-  { stage: 'check', title: '3 제출 전 점검', text: '주장 문장마다 근거를 묻고 설명할 수 있는지 봐요.' },
+  {
+    stage: 'coverLetter',
+    title: '2 자소서 쓰기',
+    text: '확정한 경험 카드로 문항마다 초안을 만들어요.',
+  },
+  {
+    stage: 'check',
+    title: '3 제출 전 점검',
+    text: '주장 문장마다 근거를 묻고 설명할 수 있는지 봐요.',
+  },
 ]
 
 export default function Intro() {

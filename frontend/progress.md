@@ -45,3 +45,5 @@
   남은 일: 18번 고치기·경험 대화 바로가기·사실 후보 카드에 저장(답하기 응답의 newCandidates는 아직 화면에 안 씀). 막힌 점 없음.
 - [18] CheckExtras 신설: 끝난 문장의 `자소서에서 고치기`·`관련 경험 대화 이어가기`(근거 카드 하나면 바로, 여럿·붙여넣음이면 목록), `카드에 넣을 사실` 후보(카드에 저장 폼·버리기), newCandidates 반영, CheckExtras.test.tsx 추가.
   남은 일: 19번 마무리(npm run check). 막힌 점: 기본 워커 수의 전체 vitest는 무관한 테스트가 가끔 타임아웃 flake(--maxWorkers=2면 통과).
+- [19] prettier 서식 정리(서식만), vitest testTimeout/hookTimeout 20초로 올려 부하 flake 제거, npm run check 전체 통과.
+  남은 일: 없음. 막힌 점 없음.

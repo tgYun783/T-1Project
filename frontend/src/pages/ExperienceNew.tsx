@@ -4,7 +4,13 @@ import { api, ApiError } from '@/api/client'
 import { StageBlock } from '@/components/StageBlock'
 
 type FileKind = 'photo' | 'award' | 'document'
-type FileDraft = { key: number; type: 'file'; kind: FileKind; file: File | null; description: string }
+type FileDraft = {
+  key: number
+  type: 'file'
+  kind: FileKind
+  file: File | null
+  description: string
+}
 type TextDraft = { key: number; type: 'text'; text: string }
 type Draft = FileDraft | TextDraft
 
@@ -32,7 +38,9 @@ export default function ExperienceNew() {
     setNextKey((k) => k + 1)
   }
   function patchFile(key: number, change: Partial<FileDraft>) {
-    setDrafts((list) => list.map((d) => (d.key === key && d.type === 'file' ? { ...d, ...change } : d)))
+    setDrafts((list) =>
+      list.map((d) => (d.key === key && d.type === 'file' ? { ...d, ...change } : d)),
+    )
   }
   function patchText(key: number, text: string) {
     setDrafts((list) => list.map((d) => (d.key === key && d.type === 'text' ? { ...d, text } : d)))

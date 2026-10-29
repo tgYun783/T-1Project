@@ -161,7 +161,10 @@ export function CandidatePanel({
 
   async function discard(candidate: Fact) {
     await api.deleteFact(experience.id, candidate.id)
-    onChange({ ...experience, candidates: experience.candidates.filter((f) => f.id !== candidate.id) })
+    onChange({
+      ...experience,
+      candidates: experience.candidates.filter((f) => f.id !== candidate.id),
+    })
   }
 
   return (
@@ -313,7 +316,11 @@ export function CardPanel({
         />
       ) : (
         <div>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={() => setAdding(true)}>
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={() => setAdding(true)}
+          >
             직접 추가
           </button>
         </div>

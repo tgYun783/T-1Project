@@ -96,7 +96,11 @@ describe('목 API ③ 문장 점검', () => {
     const { sentence } = await api.startSentence(check.id, second.id)
     expect(sentence.status).toBe('in_progress')
     expect(sentence.turns).toEqual([
-      { question: '40%는 무엇과 비교해, 어느 기간에, 어떻게 잰 값인가요?', answer: null, judge: [] },
+      {
+        question: '40%는 무엇과 비교해, 어느 기간에, 어떻게 잰 값인가요?',
+        answer: null,
+        judge: [],
+      },
     ])
     expect((await api.startSentence(check.id, second.id)).sentence).toEqual(sentence)
     await expect(api.answerSentence(check.id, second.id, '  ')).rejects.toMatchObject({

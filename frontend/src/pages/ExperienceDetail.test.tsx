@@ -61,9 +61,7 @@ describe('경험 상세', () => {
     await user.type(title, '바뀐 제목')
     await user.click(screen.getByRole('button', { name: '저장' }))
     expect(await screen.findByRole('heading', { name: '바뀐 제목' })).toBeInTheDocument()
-    await waitFor(() =>
-      expect(getDb().experiences.some((e) => e.title === '바뀐 제목')).toBe(true),
-    )
+    await waitFor(() => expect(getDb().experiences.some((e) => e.title === '바뀐 제목')).toBe(true))
   })
 
   it('returnTo가 있으면 문항으로 돌아가기가 보인다', async () => {

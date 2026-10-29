@@ -32,9 +32,7 @@ describe('J 자소서 상세', () => {
     await screen.findByText('저장했어요.')
     const { coverLetter } = await api.getCoverLetter(seedLetterId())
     expect(coverLetter.body).toBe('고친 본문입니다.')
-    expect(
-      screen.getByText('자소서를 고치면 지난 점검은 오래됨으로 바뀌어요.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('자소서를 고치면 지난 점검은 오래됨으로 바뀌어요.')).toBeInTheDocument()
   })
 
   it('S6 입구: 제출 전 점검 시작을 누르면 점검 화면 주소로 간다', async () => {
@@ -49,7 +47,10 @@ describe('J 자소서 상세', () => {
       </MemoryRouter>,
     )
     await user.click(await screen.findByRole('button', { name: '제출 전 점검 시작' }))
-    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/checks\//), AI_WAIT)
+    await waitFor(
+      () => expect(screen.getByTestId('path')).toHaveTextContent(/^\/checks\//),
+      AI_WAIT,
+    )
   })
 
   it('지난 점검이 끝난 문장 수와 함께 보이고, 자소서를 고치면 오래됨이 된다', async () => {

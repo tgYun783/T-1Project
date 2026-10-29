@@ -80,9 +80,9 @@ describe('목 API ② 작성 시작·문항별 응답', () => {
       recommendations: [],
       selectedExperienceIds: [],
     })
-    await expect(
-      api.updateCoverLetter(coverLetter.id, { body: '본문' }),
-    ).rejects.toMatchObject({ status: 400 })
+    await expect(api.updateCoverLetter(coverLetter.id, { body: '본문' })).rejects.toMatchObject({
+      status: 400,
+    })
   })
 
   it('추천 → 카드 고르기 → 응답 생성', async () => {
@@ -125,9 +125,9 @@ describe('목 API ② 작성 시작·문항별 응답', () => {
     await expect(
       api.selectExperiences(coverLetter.id, coverLetter.items[0].id, [experience.id]),
     ).rejects.toMatchObject({ status: 400, code: 'NO_CONFIRMED_FACTS' })
-    await expect(
-      api.makeAnswer(coverLetter.id, coverLetter.items[0].id),
-    ).rejects.toMatchObject({ status: 400 })
+    await expect(api.makeAnswer(coverLetter.id, coverLetter.items[0].id)).rejects.toMatchObject({
+      status: 400,
+    })
   })
 
   it('확정 사실이 있는 카드가 없으면 추천이 400 NO_CONFIRMED_FACTS다', async () => {

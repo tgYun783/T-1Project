@@ -23,8 +23,6 @@ describe('H 작성 시작', () => {
     await user.type(screen.getByLabelText('인재상'), '협업하는 사람')
     await user.type(screen.getByLabelText('문항 1'), '협업 경험을 쓰세요')
     await user.click(screen.getByRole('button', { name: '작성 시작' }))
-    expect(
-      await screen.findByRole('heading', { name: '협업 경험을 쓰세요' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '협업 경험을 쓰세요' })).toBeInTheDocument()
   })
 })

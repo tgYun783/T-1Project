@@ -1,14 +1,7 @@
 // docs/api.md를 따르는 목 API. 실제 서버가 붙으면 VITE_API_MOCK=false로 끈다.
 // AI 결과는 specs/mock-data.md 「AI 고정 동작」대로 고정한다.
 import { delay, http, HttpResponse } from 'msw'
-import type {
-  CoverLetterItem,
-  Fact,
-  FactSource,
-  Item,
-  JudgeResult,
-  Message,
-} from '@/api/types'
+import type { CoverLetterItem, Fact, FactSource, Item, JudgeResult, Message } from '@/api/types'
 import {
   emptyCard,
   emptyStatus,
@@ -45,7 +38,9 @@ const unauthenticated = () => fail(401, 'UNAUTHENTICATED', '로그인이 필요�
 const notFound = () => fail(404, 'NOT_FOUND', '찾을 수 없어요.')
 const invalid = (field: string, reason: string) =>
   HttpResponse.json(
-    { error: { code: 'VALIDATION', message: '입력을 확인해 주세요.', details: [{ field, reason }] } },
+    {
+      error: { code: 'VALIDATION', message: '입력을 확인해 주세요.', details: [{ field, reason }] },
+    },
     { status: 400 },
   )
 
@@ -250,20 +245,23 @@ const conversationHandlers = [
     })
   }),
 
-  http.post<{ id: string }>('/api/experiences/:id/conversation/start', async ({ request, params }) => {
-    const { user, experience } = findExperience(request, params.id)
-    if (!user) return unauthenticated()
-    if (!experience) return notFound()
-    await wait(AI_DELAY)
-    // 이미 대화가 있으면 마지막 AI 질문을 돌려준다(대화 이어가기).
-    const lastQuestion = experience.messages.findLast((m) => m.role === 'ai')
-    if (lastQuestion)
-      return HttpResponse.json({ question: lastQuestion, itemStatus: experience.itemStatus })
-    const question: Message = { role: 'ai', text: ITEM_QUESTIONS.situation, createdAt: now() }
-    experience.messages.push(question)
-    touch(experience)
-    return HttpResponse.json({ question, itemStatus: experience.itemStatus })
-  }),
+  http.post<{ id: string }>(
+    '/api/experiences/:id/conversation/start',
+    async ({ request, params }) => {
+      const { user, experience } = findExperience(request, params.id)
+      if (!user) return unauthenticated()
+      if (!experience) return notFound()
+      await wait(AI_DELAY)
+      // 이미 대화가 있으면 마지막 AI 질문을 돌려준다(대화 이어가기).
+      const lastQuestion = experience.messages.findLast((m) => m.role === 'ai')
+      if (lastQuestion)
+        return HttpResponse.json({ question: lastQuestion, itemStatus: experience.itemStatus })
+      const question: Message = { role: 'ai', text: ITEM_QUESTIONS.situation, createdAt: now() }
+      experience.messages.push(question)
+      touch(experience)
+      return HttpResponse.json({ question, itemStatus: experience.itemStatus })
+    },
+  ),
 
   http.post<{ id: string }>(
     '/api/experiences/:id/conversation/answers',
@@ -279,7 +277,8 @@ const conversationHandlers = [
 
       // 아직 explained가 아닌 첫 항목을 explained로 바꾸고, 그 다음 항목을 묻는다.
       // 다섯 항목이 모두 explained면 마지막 항목(의의)의 답으로 보고 같은 질문을 다시 낸다.
-      const answered = ITEMS.find((item) => experience.itemStatus[item] !== 'explained') ?? 'meaning'
+      const answered =
+        ITEMS.find((item) => experience.itemStatus[item] !== 'explained') ?? 'meaning'
       experience.itemStatus = { ...experience.itemStatus, [answered]: 'explained' }
       const next = ITEMS.find((item) => experience.itemStatus[item] !== 'explained') ?? 'meaning'
 
@@ -320,7 +319,8 @@ const factHandlers = [
       if (!candidate) return notFound()
       const { text, item, source, clueId } = await readJson(request)
       // 확인하지 않은 것은 사실이 되지 않는다(C1): ai_unverified는 받지 않는다.
-      if (!isFactSource(source)) return invalid('source', '내가 말함 또는 자료로 확인을 골라 주세요.')
+      if (!isFactSource(source))
+        return invalid('source', '내가 말함 또는 자료로 확인을 골라 주세요.')
       if (text !== undefined && isBlank(text)) return invalid('text', '필수 입력이에요.')
       if (item !== undefined && !isItem(item)) return invalid('item', '항목을 골라 주세요.')
       const clueError = checkClue(experience, source, clueId)
@@ -543,17 +543,15 @@ const coverLetterHandlers = [
       title: optionalTitle(title),
       body: null,
       target: { preferred: (preferred as string).trim(), talent: (talent as string).trim() },
-      items: filled.map(
-        (question): CoverLetterItem => ({
-          id: newId(),
-          question,
-          recommendations: [],
-          selectedExperienceIds: [],
-          answer: null,
-          usedExperienceIds: [],
-          answerEdited: false,
-        }),
-      ),
+      items: filled.map((question): CoverLetterItem => ({
+        id: newId(),
+        question,
+        recommendations: [],
+        selectedExperienceIds: [],
+        answer: null,
+        usedExperienceIds: [],
+        answerEdited: false,
+      })),
       createdAt: at,
       updatedAt: at,
     }
@@ -860,10 +858,8 @@ function findSentence(request: Request, checkId: string, sentenceId: string) {
   return { user, check, sentence }
 }
 
-const checkStale = () =>
-  fail(409, 'CHECK_STALE', '자소서가 바뀌어 이 점검은 더 진행할 수 없어요.')
-const candidateResolved = () =>
-  fail(409, 'CANDIDATE_RESOLVED', '이미 저장하거나 버린 후보예요.')
+const checkStale = () => fail(409, 'CHECK_STALE', '자소서가 바뀌어 이 점검은 더 진행할 수 없어요.')
+const candidateResolved = () => fail(409, 'CANDIDATE_RESOLVED', '이미 저장하거나 버린 후보예요.')
 
 // api.md 9절. 문장 고르기·판정은 mock-data.md 고정 동작.
 const checkHandlers = [
@@ -970,7 +966,8 @@ const checkHandlers = [
       if (!candidate) return notFound()
       const { experienceId, item, text, source, clueId } = await readJson(request)
       // 확인하지 않은 것은 사실이 되지 않는다(C1): ai_unverified는 받지 않는다.
-      if (!isFactSource(source)) return invalid('source', '내가 말함 또는 자료로 확인을 골라 주세요.')
+      if (!isFactSource(source))
+        return invalid('source', '내가 말함 또는 자료로 확인을 골라 주세요.')
       if (!isItem(item)) return invalid('item', '항목을 골라 주세요.')
       if (text !== undefined && isBlank(text)) return invalid('text', '필수 입력이에요.')
       if (typeof experienceId !== 'string') return invalid('experienceId', '경험을 골라 주세요.')
