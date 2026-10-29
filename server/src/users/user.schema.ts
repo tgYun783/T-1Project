@@ -16,6 +16,9 @@ export class User {
 
   @Prop({ required: true, enum: USER_ROLES, default: '취준생' })
   role!: UserRole;
+
+  // timestamps: true가 채운다. 가입 응답의 createdAt으로 쓴다.
+  createdAt!: Date;
 }
 
 export type UserDocument = HydratedDocument<User>;
