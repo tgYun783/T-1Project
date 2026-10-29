@@ -11,8 +11,8 @@
 - [ ] **0-2 저장소 구조 합의(프런트 팀원과)**: 루트 `Dockerfile`은 nginx 정적 서빙(PR #13). 백엔드는 `server/`에 NestJS, compose에 `server`·`db` 서비스 추가, nginx가 `/api/`·`/__health`를 `server`로 넘기는 구조(아래 1단계). `frontend/vercel.json`·`frontend/api/health.ts`는 compose 경로와 무관하지만 `/__health` 응답이 둘이 되지 않게 Vercel 쪽 정리는 프런트 팀원이.
 - [ ] **0-3 로컬 도구 확인**: node 22, docker 29, compose v5.5, claude 2.1 — 2026-10-29 확인됨. Docker Desktop이 켜져 있어야 루프의 docker 검증이 돈다.
 - [x] **0-4 AI 키**: `server/.env`(Git 제외)의 `AI_GATEWAY_API_KEY`에 학생이 직접 입력(2026-10-29 밤). 채팅·커밋에 붙이지 않기. **실제 Gateway 호출 확인은 Agent가 4·5·7단계에서 각 1회, 건당 $0.05 상한**(학생 결정 2026-10-29). 결과는 `server/ralph/reviews/C<n>-manual.md`에 기록하고, 호출한 날 학생이 **자료 → API 키**에서 사용액을 알려 준다.
-- [ ] **0-5 배포 DB 계정**: MongoDB로 가면 Atlas 무료 등급 계정·클러스터를 학생이 만들고 연결 문자열을 Vercel 환경변수 `DATABASE_URL`에 직접 입력. 8단계 전까지.
-- [ ] **0-6 Vercel**: 학생 계정으로 로그인·GitHub 저장소 연결. 8단계에서.
+- [ ] **0-5 배포 DB 방식(8단계 전)**: 기본값은 Lightsail 컨테이너 서비스 안에 `db`(mongo) 컨테이너를 같이 두는 것(데이터는 재배포 때 사라지고 시드가 다시 만들어짐 — 발표용이면 충분). 가입한 계정을 재배포 뒤에도 남기려면 MongoDB Atlas 무료 등급을 학생이 만들고 연결 문자열을 Lightsail 환경변수 `DATABASE_URL`에 직접 입력. 팀이 고른다.
+- [ ] **0-6 Lightsail 배포 담당(8단계 전)**: 배포는 이미 AWS Lightsail 컨테이너 서비스에 있음(2026-10-29 확인, 주소 `t1-project.….ap-northeast-2.cs.amazonlightsail.com`, commit c19aab2 = nginx 정적만). 누가 올렸고 재배포 권한이 누구에게 있는지, 수동 재배포로 갈지 CI 자동 배포(GitHub Secrets에 AWS 자격 증명)로 갈지 팀이 정한다. **학생 답 대기.**
 - [ ] **0-7 대시보드 화면 확인** 요청이 오면: **자료 → 제출 요건**(노란 줄), **우리 팀**(UP·배포 commit). 1단계 push 뒤와 최종.
 - [ ] **0-8 루프 돌리기**: 단계마다 `server/ralph/ralph.sh` 실행, 끝나면 결과를 보고 PR 올리기. 루프 중 `BLOCKED.md`가 생기면 사람이 판단(명세 고치기 / 되돌리기 / 표지판 추가).
 
@@ -36,10 +36,26 @@
 | 5 | `05-interview.md` | F5 세션 생성·본질문 4개(실패 시 템플릿), F6 답변·판단·한도, F7 건너뛰기·종료 | 글자 답변 1회 → 다음 질문, 종료 → finished | — |
 | 6 | `06-result.md` | F8 결과 생성·조회, 수정 제안 승인·거절, 시드 끝난 면접 | 승인 뒤 자소서 본문 변경 | — |
 | 7 | `07-speech.md` | F6 전사(`/api/speech/transcribe`), F5 TTS | 짧은 녹음 1건 전사 실제 확인 | 0-4 |
-| 8 | (루프 아님) | Vercel 배포, Atlas, 대시보드 등록, CI 자동 배포 | 대시보드 UP·releaseId 일치 | 0-5, 0-6 |
+| 8 | (루프 아님) | Lightsail 컨테이너 서비스에 app(nginx)·server(NestJS)·db(mongo) 재배포, 대시보드 배포 URL 재저장 | 대시보드 UP·`releaseId`가 main 최신 SHA와 일치 | 0-5, 0-6 |
 | 9 | `09-e2e.md` (프런트 합류 후) | `e2e/` 키트 복사, S1~S6 spec, 빈 DB docker에서 통과 | 6개 흐름 통과, 제출 요건 노란 줄 없음 | 프런트 화면 완성, 버튼 이름 확정 |
 
 1단계 구조 결정(Agent 기술 선택, 바꾸려면 `01-skeleton.md`만 고침): compose `app`은 기존 nginx 그대로 두고 `/api/`·`/__health`를 `server:3000`으로 proxy_pass. `server`는 NestJS(ports 없음), `db`는 `mongo:7`(ports·container_name 없음, 이름 붙은 볼륨, healthcheck). `/__health`는 server가 응답(releaseId = 빌드 인자). nginx의 기존 `/__health`는 proxy로 교체. 이유: 프런트 팀원 구성을 깨지 않고, 브라우저는 3000번 app 하나만 거친다는 규칙을 지킨다.
+
+## 1-8. 8단계 상세 — Lightsail 배포 (2026-10-30 갱신, 기본 배포 플랫폼을 Vercel에서 Lightsail로 바꿈)
+
+현재 상태: 대시보드 「서비스」에 `/__health` 200·공개 HTTPS 배포 ✓, 배포 commit c19aab2(프런트 nginx 정적만). main 최신에는 server·db가 있어 재배포가 필요하다.
+
+구조: Lightsail 컨테이너 서비스 하나에 컨테이너 3개를 같은 배포로 올린다. 공개 엔드포인트는 `app`(nginx, 3000)만. 컨테이너끼리는 같은 배포 안에서 `localhost`로 통신하므로 nginx의 `proxy_pass http://server:3000`은 배포용 설정에서 `http://localhost:3000`으로 바뀌어야 한다(compose용과 배포용 템플릿을 환경변수 `SERVER_UPSTREAM`으로 갈라 둔다 — 구현 시 명세 추가). `server`는 `DATABASE_URL`로 `db`(같은 배포의 mongo, `localhost:27017`) 또는 Atlas를 본다. **compose 파일 자체는 주최 측 실행용이라 바꾸지 않는다.**
+
+절차(AWS CLI는 aws-mcp 도구로, 자격 증명은 학생 계정):
+1. 이미지 빌드: `docker build --build-arg RELEASE_ID=$(git rev-parse HEAD) -t t1-app .` / `docker build --build-arg RELEASE_ID=... -t t1-server server/`. `releaseId`는 이 빌드 인자에서 나온다(소스에 고정하지 않음).
+2. 이미지 업로드: `aws lightsail push-container-image --service-name <서비스> --label app --image t1-app` (server·mongo도 같은 방식, mongo는 공식 이미지를 그대로 push).
+3. 배포 생성: `aws lightsail create-container-service-deployment` — containers: `app`(포트 3000, 환경변수 `SERVER_UPSTREAM=http://localhost:3000`), `server`(환경변수 `RELEASE_ID`·`DATABASE_URL`·`SESSION_SECRET`·`COOKIE_SECURE=true`·`AI_GATEWAY_API_KEY`), `db`(mongo:7). publicEndpoint: `app`:3000, healthCheck path `/__health`.
+4. 확인: 배포 URL `/__health`가 200이고 `releaseId`가 main 최신 SHA와 같은지 curl로 확인(리다이렉트 없이).
+5. 대시보드 등록: 팀 코드로 `PUT /api/teams/10/deploy {"url": "https://…amazonlightsail.com"}` 다시 저장 → `data.check.up`·`data.check.releaseId` 확인(03-delivery.md 「Agent가 배포 URL 등록·재확인」).
+6. 비밀값(`AI_GATEWAY_API_KEY`, `SESSION_SECRET`)은 Lightsail 환경변수에만. 저장소·채팅에 두지 않는다. `COOKIE_SECURE=true`(HTTPS)로 세션 쿠키가 유지되는지 로그인 1회로 확인.
+
+미확인(구현 전에 확인): Lightsail 컨테이너 서비스의 컨테이너 간 통신 주소(`localhost` 가정), 서비스 용량(nano/micro)에서 3컨테이너 메모리, 배포 1회 소요 시간. 자동 배포(GitHub Actions → Lightsail)는 팀이 원하면 `ci.yml` 뒤에 붙인다(AWS 키를 GitHub Secrets에).
 
 ## 2. 루프 규칙 (위키 지침 적용)
 
