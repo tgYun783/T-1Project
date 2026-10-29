@@ -64,12 +64,13 @@ backtest는 DASH의 커밋을 읽으니 먼저 `git fetch`를 한다. 배점을 
 
 ## 6. 현재 상태와 남은 일
 
-main 4676279 기준(대시보드 마지막 채점은 97e4bc6의 20.5. 4676279는 아직 표에 없음).
+main fe7d91b 기준(대시보드 마지막 채점은 97e4bc6의 20.5. 그 뒤 커밋 4676279·cdafce9·fe7d91b의 점수는 아직 받지 못함).
 
 - experiences의 "학생 답 대기"는 모두 학생 답(2026-10-30)으로 채웠다(4676279, E1 꼬리질문 내용·E2 quote 확인·E4 날짜·대상·결과·인원·팀원 3명의 면접 시점). 형식 가채점 **30.0 / 30**, 예상 약 **19.0 / 30(±0.9)**.
   - 소프트웨어 마에스트로 면접(2026-01)을 본 팀원이 E1과 같은 사람·같은 면접인지는 확인하지 않았다.
   - 형식 항목은 다 찼다. 더 올릴 곳은 아래 「옛 초점에 머문 칸」이다.
-- 아직 옛 초점에 머문 칸(context 실제 사례에 E4 없음, customer, personas, feeling 순서, 경로 1·2 path 본문, insight의 "팀 결정 대기", E3 원인, A2~A4 단점↔why_ours, 5 whys 두 단계)은 가채점표.md 「아직 안 고쳐진 부분」에 있다. 학생에게 한 칸씩 묻는다(① 상황부터 물었고 답 대기).
+- personas P1·P2와 customer는 statement 초점에 맞춰 고쳤다(PR #58, 학생 확인). fe7d91b 점수가 나오면 "초점 일치" 가설을 다시 확인한다.
+- 아직 옛 초점에 머문 칸(context 실제 사례에 E4 없음, feeling 순서, 경로 1·2 path 본문, insight의 "팀 결정 대기", E3 원인, A2~A4 단점↔why_ours, 5 whys 두 단계)은 가채점표.md 「아직 안 고쳐진 부분」에 있다. 학생에게 한 칸씩 묻는다(① 상황부터 물었고 답 대기).
 - 다음 커밋이 채점되면 DASH에 추가한다.
 - 열린 PR #37(`docs/solution-paths-scope`)과 브랜치 `docs/alternatives-a1-a4`, `docs/spec-resume-coverletter`, `feature/backend-plan`은 main과 problem.yaml이 충돌하고, 이후 팀 결정(경로 3 보류, features 교체)보다 오래된 내용이다. **머지하지 않았다.** 정리(닫기 등)는 팀이 정한다.
 - `frontend` 브랜치(E2E S1~S6 스펙, 05:20)는 main과 충돌 없이 합쳐지지만 학생 요청이 아니어서 머지하지 않았다.
