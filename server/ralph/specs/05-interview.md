@@ -6,6 +6,7 @@
 - 본질문 생성: AiModule 1회 호출, JSON 응답을 zod로 검증(4개, 실무 2·임원 2, purpose·basisSentence·text). 실패·형식 오류 → `server/src/interview/fallback-questions.ts`의 기본 4개 + `usedFallbackQuestions:true`.
 - 답변 판단: AiModule 1회, 응답 `{decision, interviewer, reason, basis_answer_id, target_field, question}` zod 검증. 서버 검사: 꼬리질문 수·전체 수·시간·답변 id 존재. 위반이면 AI 판단을 무시하고 다음 본질문으로.
 - 질문 순서는 세션 생성 때 셔플해 저장(새로고침 불변).
+- **프롬프트 분리**: 본질문 생성·답변 판단 프롬프트는 `server/src/ai/prompts/interview-questions.prompt.ts`, `interview-judge.prompt.ts`에 둔다(04 규칙과 같음). 응답 JSON 형식 지시도 프롬프트 파일 안에.
 
 ## 완료 기준
 - [ ] C5-1: `POST /api/interviews` {coverLetterId} → 201, `mainQuestions` 4개(실무 2·임원 2), `currentQuestion`이 첫 본질문, `status:in_progress`. 남의 자소서 → 404. AI 실패 시 fallback 4개 + `usedFallbackQuestions:true`로 201.

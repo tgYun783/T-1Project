@@ -3,6 +3,7 @@
 
 ## 결정
 - 결과 생성: 세션이 finished가 되는 순간 AiModule 1회로 (2) clarifiedExperiences (3) openItems ≤3 (4) suggestions를 만들어 세션에 저장. 실패 → `resultStatus:"partial"`, (1) transcript만.
+- **프롬프트 분리**: 결과 생성 프롬프트는 `server/src/ai/prompts/interview-result.prompt.ts`(04 규칙과 같음).
 - 수정 제안 승인: 자소서 `body`에서 `original`을 `proposed`로 1회 치환. 원문 없으면 409 `SUGGESTION_STALE`. 자소서에 수정 이력 `revisions:[{suggestionId, before, after, at}]`.
 
 ## 완료 기준
