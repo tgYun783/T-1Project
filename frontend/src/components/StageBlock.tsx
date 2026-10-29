@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
+import { STAGES, type Stage } from '@/lib/stages'
 
-// 단계 색: 경험 = lime, 자소서 = lilac, 점검 = cream(specs/00-common.md).
-const STAGE_BG = {
-  experience: 'bg-lime',
-  coverLetter: 'bg-lilac',
-  check: 'bg-cream',
-} as const
+/** 단계 칩: 화면이 흐름의 몇 번째 단계인지 보여 준다. */
+export function StageChip({ stage }: { stage: Stage }) {
+  return <span className={`stage-chip ${STAGES[stage].bg}`}>{STAGES[stage].name}</span>
+}
 
-export type Stage = keyof typeof STAGE_BG
-
+/** 단계 화면 안의 한 구역(흰 카드). */
 export function StageBlock({
   stage,
   children,
@@ -18,5 +16,9 @@ export function StageBlock({
   children: ReactNode
   className?: string
 }) {
-  return <section className={`block-card ${STAGE_BG[stage]} ${className}`}>{children}</section>
+  return (
+    <section data-stage={stage} className={`card ${className}`}>
+      {children}
+    </section>
+  )
 }

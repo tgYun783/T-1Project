@@ -24,3 +24,19 @@
 - [x] 17. K 제출 전 점검 — 문장 목록·질문·판정·다음 문장·오래된 점검 (specs/07-check.md, S6). S6 흐름 테스트.
 - [x] 18. K 제출 전 점검 — 고치기·경험 대화 바로가기, 사실 후보 카드에 저장 (specs/07-check.md).
 - [x] 19. 마무리: `npm run check` 전체 통과. 실패하면 고친다. 스펙에 없는 화면·파일이 남아 있지 않은지 `src/`를 확인한다.
+
+## 2차: 새 흐름(이력서 입력) + 디자인 (2026-10-30)
+
+새 흐름: `specs/03-experiences.md`(E 이력서 입력), api.md 4절 `/api/resume`. 배치 기준: `../docs/design/wireframes/`(index.html, resume·ask·letter·check.png). 판정 기준: `../docs/design/POLISH.md`.
+디자인 작업(22~28)은 POLISH.md 「확인 순서」대로 한다: `npm run shot -- <화면> --tag before` → before png와 와이어프레임 png를 Read로 열어 걸린 POLISH 항목 번호를 progress.md에 적기 → 고치기 → `npm run shot -- <화면> --tag after` → after png를 Read로 열어 와이어프레임과 비교. 화면 글자(버튼·입력칸 이름)는 바꾸지 않는다.
+
+- [x] 20. 흐름 변경 ① 목 API: api.md 4절 `/api/resume`(조회, `POST /api/resume` 활동 나누기, 초안 추가·수정·삭제, 확정)을 `src/mocks/`와 `src/api/client.ts`·`types.ts`에 넣는다. `POST /api/experiences`(개별 생성)와 그 클라이언트 함수는 지운다. 경험에 `summary`를 더한다. 시드는 `specs/mock-data.md`의 「이력서」와 「작성한 자소서: 라라테크 백엔드 지원」을 더한다. 활동 나누기는 mock-data.md 「이력서 활동 나누기」 고정 동작. 이 변경으로 깨지는 이전 목 API 테스트(개별 생성을 쓰는 `src/mocks/handlers.test.ts` 등)는 이 작업에서 고쳐도 된다. 테스트: 시드 이력서 조회, 활동 나누기로 새 활동만 더해지는지, 직접 추가·확정으로 경험이 생기는지.
+- [x] 21. 흐름 변경 ② 화면: E 이력서 입력 `/resume`(specs/03-experiences.md)을 만들고, 이전 경험 등록 화면(`src/pages/ExperienceNew.tsx`, `/experiences/new`)을 `git rm`으로 지운다. 홈 잠금 버튼 `이력서 입력`, 경험 목록 주 버튼 `이력서에서 활동 추가`, 경험 상세 왼쪽 활동 목록(specs/04 첫 문단)을 맞춘다. S2 흐름 테스트(이력서 화면에서 `활동 직접 추가` → `목록에 추가` → `경험 만들기` → `직접 추가` → 잠금 해제)로 바꾼다. 이 작업에서 `src/pages/Experiences.test.tsx`, `src/pages/Home.test.tsx`, `src/pages/FactPanels.test.tsx`는 고쳐도 된다.
+- [x] 22. 디자인 기반: 와이어프레임의 공통 모양을 `src/index.css`와 공통 컴포넌트에 넣는다. 흰 바탕, 흰 카드 + 얇은 선(`--line` 검정 12%), 보조 글자색(`--ink-60` 검정 60%), 옅은 면(`--fill` 검정 4%)(이 셋은 와이어프레임에서 승인된 보조값, 학생 답 2026-10-30), 단계 칩(`1 경험 꺼내기` 등), 상태 칩(설명됨·추가 확인 필요·모름·지금 묻는 중), 진행 막대, 이름표 크기 섹션 제목. 헤더도 와이어프레임처럼. 확인할 화면: home, experience.
+- [x] 23. 디자인 F 경험 상세(활동별 질문) — `wireframes/ask.png`: 세 칸(활동 목록 · 메신저형 대화와 바로 아래 입력칸 · 항목 상태 진행 막대+칩, 확인할 사실, 경험 카드). 화면: experience.
+- [x] 24. 디자인 E 이력서 입력 — `wireframes/resume.png`. 화면: resume.
+- [x] 25. 디자인 J 자소서 상세와 I 문항별 작성 — `wireframes/letter.png`: 왼쪽 큰 자소서 카드, 오른쪽 쓴 경험 카드 세로, 근거 문장·사실 짝 강조. 화면: letter, write.
+- [x] 26. 디자인 K 제출 전 점검 — `wireframes/check.png`: 왼쪽 문장 목록(상태 칩), 가운데 큰 인용 + 질문·답 쌓기 + J1~J4 칩, 아래 입력칸. 화면: check.
+- [x] 27. 디자인 A 소개·C 홈·D 경험 목록: 와이어프레임 원칙(POLISH H5·H6·M2·M5)으로 맞춘다. 화면: intro, home, experiences.
+- [x] 28. 디자인 B 로그인·G 붙여넣기·H 작성 시작·L 없는 주소: 같은 원칙으로 맞춘다. 화면: login, paste, new.
+- [x] 29. 2차 마무리: `npm run check` 전체 통과, `npm run shot -- --tag final`로 모든 화면을 찍어 Read로 열어 보고 POLISH 1·2절에 걸리는 곳이 없는지 확인한다.

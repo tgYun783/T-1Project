@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { assertOwner, parseObjectIdOr404 } from '../common/ownership';
@@ -16,7 +16,7 @@ import {
 import { Experience } from './experience.schema';
 import { ExperienceInput } from './experience.validation';
 import { Fact } from './fact.schema';
-import { FACT_REASONS, FactInput, factValidationError } from './fact.validation';
+import { ConfirmFactInput, FACT_REASONS, FactInput, factValidationError } from './fact.validation';
 
 type ExperienceRecord = Experience & { _id: Types.ObjectId };
 type ClueRecord = Clue & { _id: Types.ObjectId };
@@ -59,6 +59,17 @@ export class ExperiencesService {
 
   async get(userId: string, id: string): Promise<ExperienceDto> {
     return this.assemble(await this.findOwned(userId, id));
+  }
+
+  // 다른 기능(자소서 근거 카드)이 경험 상세와 같은 모양으로 여러 장을 받아 간다. 내 것이 아니거나 지운 경험은 조용히 빠지고, 순서는 받은 id 순서를 따른다.
+  async getMany(userId: string, ids: Types.ObjectId[]): Promise<ExperienceDto[]> {
+    if (!ids.length) return [];
+    const docs = await this.experiences
+      .find({ _id: { $in: ids }, userId: new Types.ObjectId(userId) })
+      .lean<ExperienceRecord[]>();
+    const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
+    const ordered = ids.map((oid) => byId.get(String(oid))).filter((doc): doc is ExperienceRecord => !!doc);
+    return Promise.all(ordered.map((doc) => this.assemble(doc)));
   }
 
   // 소유자 확인 뒤에만 고친다. 고친 칸이 없으면 updatedAt도 그대로 둬 목록 순서를 흔들지 않는다.
@@ -125,6 +136,31 @@ export class ExperiencesService {
     return toFactDto(created.toObject());
   }
 
+  // 점검 후보 확정(api.md 9절, R12·C1): 사용자가 고른 내 경험에 확인한 사실을 confirmed·origin check로 넣는다.
+  // 경험 소유(404)·단서 소속(400)을 먼저 본 뒤 claim(후보 꺼내기)이 성공해야 만든다: 실패한 요청에 후보가 사라지거나 같은 후보가 두 번 들어가지 않는다.
+  async addCheckFact(
+    userId: string,
+    experienceId: string,
+    input: FactInput,
+    claim: () => Promise<void>,
+  ): Promise<FactDto> {
+    const owned = await this.findOwned(userId, experienceId);
+    if (input.source === 'clue') await this.assertClueOfExperience(owned, input.clueId);
+    await claim();
+    const created = await this.facts.create({
+      experienceId: owned._id,
+      userId: owned.userId,
+      item: input.item,
+      text: input.text,
+      status: 'confirmed',
+      source: input.source,
+      clueId: input.source === 'clue' ? input.clueId : null,
+      origin: 'check',
+    });
+    await this.touch(owned);
+    return toFactDto(created.toObject());
+  }
+
   // 보낸 칸만 고친다. 고친 뒤의 출처가 clue면 그 단서가 이 경험 것인지 다시 확인해, 고치는 길로 남의 단서가 붙지 않게 한다(C1).
   async updateFact(userId: string, id: string, factId: string, input: Partial<FactInput>): Promise<FactDto> {
     const owned = await this.findOwned(userId, id);
@@ -139,6 +175,35 @@ export class ExperiencesService {
       .findOneAndUpdate({ _id: fact._id, experienceId: owned._id }, { $set: input }, { returnDocument: 'after' })
       .lean<FactRecord>();
     if (!updated) throw new NotFoundException({ code: 'NOT_FOUND', message: '찾을 수 없습니다.' });
+    await this.touch(owned);
+    return toFactDto(updated);
+  }
+
+  // 후보만 확정한다. 이미 확정된 사실을 다시 확정하면 출처가 조용히 덮이므로 409로 막는다(명세 06).
+  // itemStatus는 대화 판정이라 건드리지 않고 updatedAt만 올린다(api.md 5절 끝).
+  async confirmFact(userId: string, id: string, factId: string, input: ConfirmFactInput): Promise<FactDto> {
+    const owned = await this.findOwned(userId, id);
+    const fact = await this.findFact(owned, factId);
+    if (fact.status !== 'candidate') {
+      throw new ConflictException({ code: 'FACT_RESOLVED', message: '이미 확정된 사실입니다.' });
+    }
+    if (input.source === 'clue') await this.assertClueOfExperience(owned, input.clueId);
+    const set: Partial<Fact> = {
+      status: 'confirmed',
+      source: input.source,
+      clueId: input.source === 'clue' ? input.clueId : null,
+    };
+    if (input.text !== undefined) set.text = input.text;
+    if (input.item !== undefined) set.item = input.item;
+    // status 조건을 걸어 동시에 두 번 확정해도 한 번만 바뀐다.
+    const updated = await this.facts
+      .findOneAndUpdate(
+        { _id: fact._id, experienceId: owned._id, status: 'candidate' },
+        { $set: set },
+        { returnDocument: 'after' },
+      )
+      .lean<FactRecord>();
+    if (!updated) throw new ConflictException({ code: 'FACT_RESOLVED', message: '이미 확정된 사실입니다.' });
     await this.touch(owned);
     return toFactDto(updated);
   }

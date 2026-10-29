@@ -3,7 +3,7 @@
 근거: `docs/problem.yaml`의 `functional_spec`(R1~R13, C1~C5)만 쓴다. 이전 API 명세(F1~F9 기준)는 참고하지 않고 새로 썼다.
 각 API 제목 옆 괄호는 근거가 된 요구사항이다. problem.yaml에 근거가 없어 학생에게 물어 정한 것은 「학생 답(2026-10-30)」으로 적는다.
 
-범위 밖: `functional_spec.deferred`(D1~D9: 모의면접·음성·카메라·면접 결과·재답변)와 뺀 기능(F2 이력서, F3 템플릿 자소서)은 API를 만들지 않는다.
+범위 밖: 기각한 음성 모의면접(모의면접·음성·카메라·면접 결과·재답변)와 뺀 기능(이전 F2 이력서, 이전 F3 템플릿 자소서)은 API를 만들지 않는다.
 운영용 경로(헬스체크, 시드 데이터 등)도 problem.yaml에 근거가 없어 이 문서에서 다루지 않는다.
 
 ## 0. 정한 것
@@ -12,6 +12,7 @@
 | --- | --- | --- |
 | 인증 | 로그인하면 JWT를 돌려주고, 프런트가 `Authorization: Bearer <token>`으로 보낸다 | 학생 답(2026-10-30) |
 | 단서 파일 | 사진·수상기록·문서 파일은 보관만 한다. AI는 파일을 읽지 않고, 사용자가 단서마다 쓴 설명과 텍스트 단서만 본다. 설명 없이 올린 파일은 보관만 하고(사실의 "자료로 확인" 근거로는 쓸 수 있음) AI 대화에는 쓰지 않는다 | 학생 답(2026-10-30) |
+| 이력서 | 계정당 하나. 글을 붙여넣으면 AI가 활동 초안으로 나누고, 사용자가 고치거나 빼거나 직접 추가한 뒤 확정하면 활동마다 경험이 하나 생긴다. 다시 붙여넣으면 새 활동만 더한다 | R2, 학생 답(2026-10-30) |
 | 사실 후보 | 사용자가 답할 때마다 AI가 그 답에서 사실 후보를 뽑아 쌓는다 | 학생 답(2026-10-30) |
 | AI 응답 | AI가 끝날 때까지 기다렸다가 완성된 결과를 JSON 한 번으로 돌려준다(스트리밍 없음) | 학생 답(2026-10-30) |
 | 답변 방식 | 모든 답변은 글(text)이다 | R3, R10 |
@@ -63,10 +64,26 @@ type Clue = {                     // R2
   createdAt: string;
 };
 
+// R2: 이력서는 계정당 하나. 붙여넣은 글과, 아직 경험이 되지 않은 활동 초안 목록.
+type Resume = {
+  text: string | null;            // 마지막으로 붙여넣은 이력서 글. 아직 없으면 null
+  drafts: ActivityDraft[];        // 확인 대기 중인 활동(확정하면 경험이 되고 목록에서 빠진다)
+  updatedAt: string | null;
+};
+
+type ActivityDraft = {            // R2
+  id: string;
+  title: string;                  // 활동 이름 (예: "캡스톤디자인 학과 공지 알림 앱")
+  period: string;                 // 대략적 시기 (예: "2025년 1학기"). 모르면 빈 문자열
+  summary: string;                // 이력서에서 이 활동에 해당하는 부분. 직접 추가하면 사용자가 쓴 한 줄(빈 문자열 가능)
+  origin: "ai" | "manual";
+};
+
 type Experience = {               // R2, R6
   id: string;
   title: string;
   period: string;                 // 대략적 시기, 자유 입력 (예: "2025년 여름")
+  summary: string;                // R2: 이력서에서 온 활동 내용. R3 질문에 쓴다
   clues: Clue[];
   itemStatus: Record<Item, ItemStatus>;   // R3 실시간 상태
   card: Record<Item, Fact[]>;             // R6: 확정된 사실만
@@ -139,11 +156,35 @@ type Check = {
 
 로그아웃은 프런트가 토큰을 버리는 것으로 끝낸다(별도 API 없음).
 
-## 4. 경험 (R2, R6)
+## 4. 이력서와 경험 (R2, R3, R6)
 
-### `POST /api/experiences` (R2)
-- 요청: `{ "title": string, "period": string }` (둘 다 필수)
-- `201 { "experience": Experience }`. 단서 없이 만들 수 있고, 바로 R3 대화로 넘어간다.
+경험은 이력서의 활동을 확정해서만 만든다. 경험을 하나씩 따로 만드는 API는 없다(R2).
+
+### `GET /api/resume` (R2)
+- `200 { "resume": Resume }`. 아직 붙여넣은 적이 없으면 `text: null`, `drafts: []`.
+
+### `POST /api/resume` (R2)
+- 요청: `{ "text": string }` (빈 글이면 `400`)
+- AI가 글을 활동으로 나눠 제목·시기·해당 부분(`summary`)을 붙인다.
+- 이미 있는 경험이나 초안과 제목이 같은 활동은 빼고, 새로 나온 활동만 `drafts`에 더한다. `text`는 새 글로 바뀐다.
+- `200 { "resume": Resume, "added": ActivityDraft[] }`
+- AI 실패면 `502 AI_UNAVAILABLE`, 아무것도 저장하지 않는다(C2). 사용자는 활동을 직접 추가해 계속할 수 있다.
+
+### `POST /api/resume/drafts` (R2)
+- 활동 직접 추가(AI 없음). 요청: `{ "title": string, "period"?: string, "summary"?: string }` (`title` 필수)
+- `201 { "draft": ActivityDraft }` (`origin: manual`)
+
+### `PATCH /api/resume/drafts/:draftId` (R2)
+- 요청: `{ "title"?: string, "period"?: string, "summary"?: string }`. `title`을 비우면 `400`.
+- `200 { "draft": ActivityDraft }`
+
+### `DELETE /api/resume/drafts/:draftId` (R2)
+- 초안을 뺀다. `204`
+
+### `POST /api/resume/drafts/confirm` (R2)
+- 요청: `{ "draftIds": string[] }` (1개 이상). 고른 초안마다 경험을 하나씩 만들고 초안 목록에서 뺀다.
+- `201 { "experiences": Experience[] }` (각각 `title`·`period`·`summary`가 초안 값, 단서·사실 없음)
+- 없는 초안이 섞이면 `404`.
 
 ### `GET /api/experiences` (R6)
 - `200 { "experiences": Experience[] }` (최근 수정순)
@@ -155,14 +196,14 @@ type Check = {
 - 요청: `{ "title"?: string, "period"?: string }`
 - `200 { "experience": Experience }`
 
-### `POST /api/experiences/:id/clues` (R2)
+### `POST /api/experiences/:id/clues` (R3)
 - 파일 단서: `multipart/form-data` — `type`(`photo`|`award`|`document`), `file`, `description`(선택)
 - 텍스트 단서: JSON `{ "type": "text", "text": string }` (`text` 필수)
 - `201 { "clue": Clue }`
 - 파일은 보관만 한다. AI 대화에는 `description`과 텍스트 단서만 들어간다.
 - `description`이 없는 파일 단서는 AI 대화에 쓰이지 않는다. 사실을 "자료로 확인"할 때의 근거(`clueId`)로는 쓸 수 있다.
 
-### `GET /api/experiences/:id/clues/:clueId/file` (R2, R5)
+### `GET /api/experiences/:id/clues/:clueId/file` (R3, R5)
 - 보관한 파일을 그대로 돌려준다. 사실을 "자료로 확인"할 때 사용자가 다시 본다.
 
 ## 5. 경험 대화 (R3, R4, R5)
@@ -172,7 +213,7 @@ type Check = {
 - 대화가 아직 없으면 `messages`는 빈 배열이다.
 
 ### `POST /api/experiences/:id/conversation/start` (R3)
-- AI가 제목·시기·단서 설명·텍스트 단서를 보고 첫 질문을 만든다.
+- AI가 제목·시기·이력서에서 온 활동 내용(`summary`)·단서 설명·텍스트 단서를 보고 첫 질문을 만든다.
 - `200 { "question": Message, "itemStatus": ... }`
 - 이미 대화가 있으면 새로 만들지 않고 마지막 AI 질문을 돌려준다(대화 이어가기, R13 보강에서도 쓴다).
 
@@ -326,8 +367,8 @@ type Check = {
 | 요구사항 | API |
 | --- | --- |
 | R1 회원가입·로그인 | `POST /auth/signup`, `POST /auth/login`, `GET /auth/me` |
-| R2 경험 등록(단서 선택) | `POST /experiences`, `POST /experiences/:id/clues`, `GET .../clues/:clueId/file` |
-| R3 대화로 경험 꺼내기 | `GET .../conversation`, `POST .../conversation/start`, `POST .../conversation/answers` |
+| R2 이력서로 경험 만들기 | `GET /resume`, `POST /resume`(AI 활동 나누기), `POST`·`PATCH`·`DELETE /resume/drafts`, `POST /resume/drafts/confirm` |
+| R3 대화로 경험 꺼내기 | `GET .../conversation`, `POST .../conversation/start`, `POST .../conversation/answers`, 단서 `POST /experiences/:id/clues`, `GET .../clues/:clueId/file` |
 | R4 사실 확정 | 후보 목록 `GET .../conversation`·`GET /experiences/:id`(`candidates`), `POST .../facts/:factId/confirm`, `PATCH .../facts/:factId`, `DELETE .../facts/:factId` |
 | R5 출처 표시 | `Fact.source`, `Fact.clueId` (확정 시 `said`/`clue` 선택) |
 | R6 경험 카드 관리 | `GET /experiences`, `GET/PATCH /experiences/:id`, `POST/PATCH/DELETE .../facts` |

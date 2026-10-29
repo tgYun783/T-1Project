@@ -1,0 +1,354 @@
+<title>T1 화면 와이어프레임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap">
+<style>
+/* 레이아웃: 흰 캔버스 위에 단계 색은 "표시"(머리 띠·칩)로만 쓰고, 내용은 흰 카드 + 얇은 선으로 나눈다. 화면마다 주인공 하나.
+   색·글꼴·모서리는 docs/design/DESIGN.md 토큰. --ink-60·--line·--fill은 검정의 투명도만 바꾼 보조값(제안). */
+:root {
+  --canvas: #ffffff;
+  --ink: #000000;
+  --ink-60: rgba(0, 0, 0, 0.6);
+  --line: rgba(0, 0, 0, 0.12);
+  --fill: rgba(0, 0, 0, 0.04);
+  --lime: #dceeb1;
+  --lilac: #c5b0f4;
+  --cream: #f4ecd6;
+  --coral: #f3c9b6;
+  --success: #1ea64a;
+  --font: 'Inter', 'Wanted Sans Variable', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  --r-pill: 50px; --r-block: 24px; --r-card: 16px; --r-row: 8px; --r-box: 6px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55; word-break: keep-all; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* 와이어프레임 바깥 틀 */
+.doc { max-width: 1320px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+.doc-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+.doc-head h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); font-weight: 400; letter-spacing: -0.02em; }
+.doc-head p { margin: 4px 0 0; color: var(--ink-60); max-width: 60ch; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { border: 1px solid var(--ink); background: var(--canvas); border-radius: var(--r-pill); padding: 8px 16px; cursor: pointer; transition: background .15s; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--canvas); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.notes li { border-left: 2px solid var(--ink); padding: 2px 12px; color: var(--ink-60); font-size: 14px; }
+.notes b { color: var(--ink); font-weight: 600; }
+
+/* 브라우저 모양 틀 */
+.frame { border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; background: var(--canvas); }
+.bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--fill); font-size: 13px; color: var(--ink-60); font-variant-numeric: tabular-nums; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.url { margin-left: 8px; background: var(--canvas); border-radius: var(--r-pill); padding: 2px 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 앱 공통 */
+.app-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; font-size: 17px; }
+.nav { display: flex; align-items: center; gap: 20px; font-size: 15px; }
+.nav .on { border-bottom: 2px solid var(--ink); }
+.page { padding: 24px; display: grid; gap: 20px; }
+.stage { display: inline-flex; align-items: center; gap: 8px; border-radius: var(--r-pill); padding: 4px 12px; font-size: 13px; font-weight: 600; }
+.stage.s1 { background: var(--lime); } .stage.s2 { background: var(--lilac); } .stage.s3 { background: var(--cream); }
+.page-title { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.page-title h2 { margin: 8px 0 0; font-size: clamp(26px, 3.2vw, 36px); font-weight: 400; letter-spacing: -0.02em; text-wrap: balance; }
+.meta { color: var(--ink-60); font-size: 13px; }
+.label { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+.card { border: 1px solid var(--line); border-radius: var(--r-card); padding: 20px; background: var(--canvas); display: grid; gap: 14px; align-content: start; min-width: 0; }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-h h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--r-pill); border: 1px solid var(--ink); background: var(--canvas); padding: 10px 18px; font-size: 15px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
+.btn:hover { background: var(--fill); }
+.btn.primary { background: var(--ink); color: var(--canvas); height: 52px; padding: 0 26px; }
+.btn.primary:hover { background: var(--ink); opacity: .86; }
+.btn.sm { padding: 5px 12px; font-size: 13px; }
+.btn.ghost { border-color: transparent; text-decoration: underline; text-underline-offset: 3px; padding-inline: 4px; }
+.field { width: 100%; border: 1px solid var(--line); border-radius: var(--r-row); padding: 12px 14px; font: inherit; background: var(--canvas); resize: vertical; }
+.field:focus { outline: none; border-color: var(--ink); }
+.row { display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r-row); background: var(--fill); }
+.row.pending { background: transparent; border: 1.5px dashed var(--ink); }
+.row-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r-pill); padding: 3px 10px; font-size: 13px; border: 1px solid var(--line); background: var(--canvas); white-space: nowrap; }
+.chip.ok { border-color: var(--success); }
+.chip.ok::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+.chip.need { border: 1.5px dashed var(--ink); }
+.chip.miss { background: var(--coral); border-color: transparent; }
+.chip.next { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+.meter { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.meter span { height: 10px; border: 1.5px solid var(--ink); border-radius: 3px; }
+.meter span.f { background: var(--ink); }
+.big { font-size: 40px; font-weight: 300; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; line-height: 1; }
+.check { width: 18px; height: 18px; border-radius: var(--r-box); border: 1.5px solid var(--ink); display: inline-grid; place-items: center; flex: none; }
+.check.on { background: var(--success); border-color: var(--success); }
+.check.on::after { content: ""; width: 8px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+.quote { border-left: 3px solid var(--ink); padding: 2px 0 2px 12px; color: var(--ink-60); font-size: 14px; }
+.stack { display: grid; gap: 10px; }
+.hl { background: var(--cream); border-radius: 4px; padding: 0 3px; }
+
+/* 화면별 배치 */
+.g-resume { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.g-ask { display: grid; grid-template-columns: 220px minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.g-letter { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+.g-check { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+.rail { display: grid; gap: 6px; }
+.rail a { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-row); color: inherit; text-decoration: none; border: 1px solid transparent; }
+.rail a.on { border-color: var(--ink); background: var(--lime); }
+.rail a:not(.on):hover { background: var(--fill); }
+.chat { display: grid; gap: 12px; }
+.msg { max-width: 82%; padding: 12px 16px; border-radius: var(--r-card); }
+.msg.ai { background: var(--fill); justify-self: start; border-top-left-radius: 4px; }
+.msg.me { background: var(--ink); color: var(--canvas); justify-self: end; border-top-right-radius: 4px; }
+.msg .who { display: block; font-size: 12px; font-weight: 600; opacity: .7; margin-bottom: 2px; }
+.composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; border-top: 1px solid var(--line); padding-top: 16px; }
+.answer { font-size: 17px; line-height: 1.75; max-width: 64ch; }
+.qtabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.qtab { border-radius: var(--r-pill); padding: 6px 14px; font-size: 14px; border: 1px solid var(--line); }
+.qtab.on { border-color: var(--ink); background: var(--lilac); }
+.excard { border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 16px; display: grid; gap: 8px; }
+.excard.on { border: 2px solid var(--ink); }
+.excard ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 2px; }
+.sent { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--r-row); border: 1px solid var(--line); }
+.sent.on { border: 2px solid var(--ink); background: var(--cream); }
+.thread { display: grid; gap: 14px; }
+.qa { display: grid; gap: 6px; }
+.qa .q { font-weight: 600; }
+.judge { display: flex; flex-wrap: wrap; gap: 6px; }
+
+@media (max-width: 1000px) {
+  .g-ask { grid-template-columns: minmax(0, 1fr) 300px; }
+  .g-ask .rail-col { grid-column: 1 / -1; }
+  .g-ask .rail { grid-auto-flow: column; grid-auto-columns: minmax(180px, 1fr); overflow-x: auto; }
+}
+@media (max-width: 760px) {
+  .g-resume, .g-ask, .g-letter, .g-check { grid-template-columns: minmax(0, 1fr); }
+  .page { padding: 16px; }
+  .msg { max-width: 92%; }
+  .composer { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <h1>화면 와이어프레임</h1>
+      <p>새 흐름(이력서 → 활동별 질문 → 자소서와 근거 카드 → 제출 전 점검)의 배치안입니다. 데이터는 목 API 시드 그대로이고, 버튼 이름은 frontend/specs와 같습니다.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="화면">
+      <button class="tab" role="tab" id="t-resume" aria-controls="resume" aria-selected="true">1 이력서 입력</button>
+      <button class="tab" role="tab" id="t-ask" aria-controls="ask" aria-selected="false">2 활동별 질문</button>
+      <button class="tab" role="tab" id="t-letter" aria-controls="letter" aria-selected="false">3 자소서와 근거 카드</button>
+      <button class="tab" role="tab" id="t-check" aria-controls="check" aria-selected="false">4 제출 전 점검</button>
+    </div>
+  </header>
+
+  <!-- 1 이력서 입력 -->
+  <section id="resume" role="tabpanel" aria-labelledby="t-resume" class="stack" style="gap:16px">
+    <ul class="notes">
+      <li><b>주인공</b>은 오른쪽 활동 목록과 그 아래 검정 버튼 하나(경험 만들기)예요.</li>
+      <li><b>활동 나누기</b>는 보조 버튼이에요. AI가 실패해도 활동 직접 추가로 계속할 수 있어요.</li>
+      <li><b>점선</b>은 아직 비어 있는 자리(직접 추가)에만 써요.</li>
+    </ul>
+    <div class="frame">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">localhost/resume</span></div>
+      <div class="app-head"><span class="brand">T-1Project</span><nav class="nav"><span>자소서</span><span class="on">경험</span><button class="btn sm">로그아웃</button></nav></div>
+      <div class="page">
+        <div class="page-title">
+          <div><span class="stage s1">1 경험 꺼내기</span><h2>이력서를 붙여넣으면 활동별로 나눠 드려요</h2></div>
+          <span class="meta">확인한 활동마다 경험 카드가 하나씩 생겨요</span>
+        </div>
+        <div class="g-resume">
+          <div class="card">
+            <div class="card-h"><label class="label" for="cv">이력서</label><span class="meta">마지막 수정 10월 30일</span></div>
+            <textarea id="cv" class="field" rows="11">컴퓨터공학과 4학년(2026년 2월 졸업 예정)
+- 캡스톤디자인 「학과 공지 알림 앱」 (2025년 1학기, 4인 팀, 백엔드·공지 크롤러 담당)
+- 교내 해커톤 「동아리 회비 정산 웹」 (2025년 여름, 5인 팀 팀장)
+- 프로그래밍 동아리 운영진 (2024년, 스터디 일정 관리)</textarea>
+            <div class="row-h"><span class="meta">다시 붙여넣으면 새로 나온 활동만 목록에 더해요.</span><button class="btn">활동 나누기</button></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>확인할 활동</h3><span class="meta">3개</span></div>
+            <div class="stack">
+              <div class="row"><div class="row-h"><b>캡스톤디자인 학과 공지 알림 앱</b><span class="meta">2025년 1학기</span></div><span class="meta">4인 팀, 백엔드·공지 크롤러 담당</span><div><button class="btn sm">고치기</button> <button class="btn sm ghost">빼기</button></div></div>
+              <div class="row"><div class="row-h"><b>교내 해커톤 동아리 회비 정산 웹</b><span class="meta">2025년 여름</span></div><span class="meta">5인 팀 팀장</span><div><button class="btn sm">고치기</button> <button class="btn sm ghost">빼기</button></div></div>
+              <div class="row"><div class="row-h"><b>프로그래밍 동아리 운영진</b><span class="meta">2024년</span></div><span class="meta">스터디 일정 관리</span><div><button class="btn sm">고치기</button> <button class="btn sm ghost">빼기</button></div></div>
+              <div class="row pending"><div class="row-h"><span>빠진 활동이 있나요?</span><button class="btn sm">활동 직접 추가</button></div></div>
+            </div>
+            <button class="btn primary">경험 만들기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 활동별 질문 -->
+  <section id="ask" role="tabpanel" aria-labelledby="t-ask" class="stack" style="gap:16px" hidden>
+    <ul class="notes">
+      <li><b>세 칸</b>: 왼쪽 활동 목록, 가운데 대화(주인공), 오른쪽 진행·사실·카드.</li>
+      <li><b>항목 상태</b>는 점선 행 5개 대신 진행 막대와 칩 5개. 다음에 물어볼 항목만 검정 칩.</li>
+      <li><b>입력칸</b>은 대화 바로 아래 메신저처럼 붙여요. 빈 공간을 남기지 않아요.</li>
+    </ul>
+    <div class="frame">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">localhost/experiences/seed-exp-capstone</span></div>
+      <div class="app-head"><span class="brand">T-1Project</span><nav class="nav"><span>자소서</span><span class="on">경험</span><button class="btn sm">로그아웃</button></nav></div>
+      <div class="page">
+        <div class="g-ask">
+          <aside class="rail-col stack">
+            <span class="label">활동</span>
+            <nav class="rail">
+              <a href="#ask" class="on"><b>캡스톤디자인 학과 공지 알림 앱</b><span class="meta">설명됨 3 / 5</span></a>
+              <a href="#ask"><b>교내 해커톤 동아리 회비 정산 웹</b><span class="meta">아직 시작 안 함</span></a>
+              <a href="#ask"><b>프로그래밍 동아리 운영진</b><span class="meta">아직 시작 안 함</span></a>
+            </nav>
+            <button class="btn sm">이력서에서 활동 추가</button>
+          </aside>
+
+          <div class="card" style="gap:18px">
+            <div class="stack" style="gap:6px">
+              <span class="stage s1" style="justify-self:start">1 경험 꺼내기</span>
+              <div class="row-h"><h2 style="margin:0;font-size:28px;font-weight:400;letter-spacing:-0.02em">캡스톤디자인 학과 공지 알림 앱</h2><button class="btn sm">수정</button></div>
+              <span class="meta">2025년 1학기</span>
+              <p class="quote" style="margin:0">이력서: 4인 팀, 백엔드·공지 크롤러 담당</p>
+              <div><span class="chip">단서 · 발표 자료 마지막 장 역할 분담표</span> <button class="btn sm ghost">단서 추가</button></div>
+            </div>
+            <div class="chat">
+              <div class="msg ai"><span class="who">AI</span>이 경험에서 해결하려던 문제는 무엇이었나요?</div>
+              <div class="msg me"><span class="who">나</span>학과 공지가 홈페이지에만 올라와 학생들이 신청 마감을 자주 놓쳤어요.</div>
+              <div class="msg ai"><span class="who">AI</span>그때 본인이 맡은 역할은 무엇이었나요?</div>
+              <div class="msg me"><span class="who">나</span>4명 팀에서 백엔드와 공지 크롤러를 맡았고, 팀장은 다른 팀원이었어요.</div>
+              <div class="msg ai"><span class="who">AI</span>결과는 어땠나요? 직접 확인한 것만 말해 주세요.</div>
+            </div>
+            <div class="composer">
+              <div class="stack" style="gap:6px"><label class="label" for="ans">답변</label><textarea id="ans" class="field" rows="3" placeholder="직접 확인한 것만 적어 주세요"></textarea><span class="meta">오른쪽 상태를 보고 충분하면 언제든 멈춰도 돼요.</span></div>
+              <button class="btn primary">보내기</button>
+            </div>
+          </div>
+
+          <aside class="stack" style="gap:16px">
+            <div class="card">
+              <div class="card-h"><span class="label">항목 상태</span><span class="meta">설명됨</span></div>
+              <div class="row-h"><span class="big">3<span style="font-size:20px"> / 5</span></span></div>
+              <div class="meter" aria-hidden="true"><span class="f"></span><span class="f"></span><span class="f"></span><span></span><span></span></div>
+              <div class="judge"><span class="chip ok">상황</span><span class="chip ok">역할</span><span class="chip ok">행동</span><span class="chip next">결과 · 지금 묻는 중</span><span class="chip need">의의</span></div>
+              <span class="meta">카드를 고쳐도 상태는 바뀌지 않아요. 다시 대화하면 갱신돼요.</span>
+            </div>
+            <div class="card">
+              <div class="card-h"><span class="label">확인할 사실</span><span class="meta">1</span></div>
+              <div class="row pending"><span class="meta">의의 · AI 제안·미확인</span><span>반복되는 불편을 자동화로 줄이는 데 관심이 생겼다</span><div><button class="btn sm">확정</button> <button class="btn sm ghost">버리기</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><span class="label">경험 카드</span><button class="btn sm ghost">직접 추가</button></div>
+              <div class="stack" style="gap:8px;font-size:14px">
+                <div><span class="meta">상황</span><br>공지가 홈페이지에만 올라와 마감을 자주 놓쳤다</div>
+                <div><span class="meta">역할</span><br>4명 팀에서 백엔드와 공지 크롤러 담당</div>
+                <div><span class="meta">행동</span><br>10분마다 새 공지를 확인해 푸시를 보내는 크롤러</div>
+                <div><span class="meta">결과</span><br>놓쳤다는 말이 줄었다는 반응. 수치는 재지 않음</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 자소서와 근거 카드 -->
+  <section id="letter" role="tabpanel" aria-labelledby="t-letter" class="stack" style="gap:16px" hidden>
+    <ul class="notes">
+      <li><b>왼쪽</b>은 큰 자소서 카드(문항과 응답). 읽기 좋게 한 줄 64자 안쪽.</li>
+      <li><b>오른쪽</b>에 이 응답에 쓴 경험 카드를 세로로. 응답의 근거 문장과 카드 사실을 같은 색으로 짝지어요.</li>
+      <li><b>검정 버튼</b>은 다음 단계인 제출 전 점검 하나예요.</li>
+    </ul>
+    <div class="frame">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">localhost/cover-letters/cl-ganada</span></div>
+      <div class="app-head"><span class="brand">T-1Project</span><nav class="nav"><span class="on">자소서</span><span>경험</span><button class="btn sm">로그아웃</button></nav></div>
+      <div class="page">
+        <div class="page-title">
+          <div><span class="stage s2">2 자소서 쓰기</span><h2>가나다소프트 백엔드 지원</h2></div>
+          <span class="meta">응답 1 / 문항 2 · 작성함</span>
+        </div>
+        <div class="g-letter">
+          <div class="card" style="gap:18px;padding:28px">
+            <div class="qtabs"><span class="qtab on">문항 1</span><span class="qtab">문항 2</span></div>
+            <p style="margin:0;font-weight:600;font-size:17px">직무 관련 경험을 바탕으로 본인의 강점을 서술하시오</p>
+            <div class="answer">학과 공지가 홈페이지에만 올라와 학생들이 신청 마감을 자주 놓치는 문제가 있었습니다. 저는 4명이 함께한 캡스톤디자인에서 백엔드와 공지 크롤러를 맡아, <span class="hl">공지 게시판을 10분마다 확인해 새 글이 올라오면 앱 푸시를 보내는 크롤러</span>를 직접 만들었습니다. 학과 단톡방에 공유해 한 학기 동안 시험 운영했고, 공지를 놓쳤다는 말이 줄었다는 반응을 들었습니다. 해커톤에서는 5명 팀의 팀장으로 기능 범위를 정하고, 회비 입금 내역을 엑셀로 받아 정산 화면에 올리는 기능을 만들어 48시간 안에 시연까지 마쳤습니다.</div>
+            <div class="row-h" style="border-top:1px solid var(--line);padding-top:16px;flex-wrap:wrap">
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">응답 저장</button><button class="btn">카드 다시 고르기</button></div>
+              <button class="btn primary">제출 전 점검 시작</button>
+            </div>
+          </div>
+          <aside class="stack" style="gap:12px">
+            <div class="card-h"><span class="label">이 응답에 쓴 경험 카드</span><span class="meta">2</span></div>
+            <div class="excard on">
+              <div class="row-h"><b>캡스톤디자인 학과 공지 알림 앱</b></div>
+              <span class="meta">2025년 1학기 · 설명됨 4 / 5</span>
+              <ul><li>4명 팀에서 백엔드·공지 크롤러 담당</li><li><span class="hl">10분마다 공지를 확인해 푸시를 보내는 크롤러</span></li><li>놓쳤다는 말이 줄었다는 반응(수치 없음)</li></ul>
+              <button class="btn sm" style="justify-self:start">보강하기</button>
+            </div>
+            <div class="excard">
+              <div class="row-h"><b>교내 해커톤 동아리 회비 정산 웹</b></div>
+              <span class="meta">2025년 여름 · 설명됨 3 / 5</span>
+              <ul><li>5명 팀의 팀장, 기능 범위·발표</li><li>입금 내역을 엑셀로 받아 정산 화면에 올림</li><li>48시간 안에 시연, 수상은 못 함</li></ul>
+              <button class="btn sm" style="justify-self:start">보강하기</button>
+            </div>
+            <div class="row pending"><span class="meta">카드에 없는 수치·기여도는 응답에 넣지 않았어요.</span></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 제출 전 점검 -->
+  <section id="check" role="tabpanel" aria-labelledby="t-check" class="stack" style="gap:16px" hidden>
+    <ul class="notes">
+      <li><b>왼쪽</b> 문장 목록은 상태 칩으로 한눈에. 지금 문장만 크림색으로 강조.</li>
+      <li><b>가운데</b>는 지금 문장을 인용으로 크게 두고, 질문과 내 답을 아래로 쌓아요.</li>
+      <li><b>판정</b>은 J1~J4 칩(충족 = 초록 점, 빠짐 = 코럴). 점수는 없어요.</li>
+    </ul>
+    <div class="frame">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">localhost/checks/ck-1</span></div>
+      <div class="app-head"><span class="brand">T-1Project</span><nav class="nav"><span class="on">자소서</span><span>경험</span><button class="btn sm">로그아웃</button></nav></div>
+      <div class="page">
+        <div class="page-title">
+          <div><span class="stage s3">3 제출 전 점검</span><h2>면접관처럼 문장마다 근거를 물어봐요</h2></div>
+          <div class="stack" style="gap:6px;min-width:200px"><span class="meta">끝난 문장 1 / 전체 5</span><div class="meter" aria-hidden="true"><span class="f"></span><span></span><span></span><span></span><span></span></div></div>
+        </div>
+        <div class="g-check">
+          <aside class="stack">
+            <span class="label">점검할 문장</span>
+            <div class="sent"><span class="chip ok" style="justify-self:start">설명됨</span><span style="font-size:14px">…데이터 기반으로 문제를 해결했습니다.</span></div>
+            <div class="sent on"><span class="chip next" style="justify-self:start">진행 중</span><span style="font-size:14px">공지 크롤러를 설계해 학생들의 공지 확인율을 40% 높였고,</span></div>
+            <div class="sent"><span class="chip" style="justify-self:start">대기</span><span style="font-size:14px">팀을 주도해 일정 안에 배포를 마쳤습니다.</span></div>
+            <div class="sent"><span class="chip" style="justify-self:start">대기</span><span style="font-size:14px">…수상권에 근접한 성과를 거두었습니다.</span></div>
+          </aside>
+          <div class="card" style="gap:20px;padding:28px">
+            <blockquote style="margin:0;font-size:22px;line-height:1.5;letter-spacing:-0.02em">“공지 크롤러를 설계해 학생들의 공지 확인율을 <span class="hl">40%</span> 높였고,”</blockquote>
+            <div class="thread">
+              <div class="qa"><span class="q">질문 · 40%는 무엇과 비교해, 어느 기간에, 어떻게 잰 값인가요?</span><span>공지 확인율이 많이 올랐어요. 체감상 그 정도였어요.</span><div class="judge"><span class="chip miss">J1 수치의 출처 · 빠짐</span><span class="chip ok">J2 본인의 행동 · 충족</span><span class="chip miss">J4 단정 · 빠짐</span></div></div>
+              <div class="qa"><span class="q">질문 · 조금 더 구체적으로, 직접 한 행동과 확인한 결과를 말해 주세요.</span><span class="meta">답을 기다리는 중</span></div>
+            </div>
+            <div class="composer">
+              <div class="stack" style="gap:6px"><label class="label" for="ans2">답변</label><textarea id="ans2" class="field" rows="3">실제로 재지는 않았고, 공지를 놓쳤다는 말이 줄었다는 반응만 들었습니다.</textarea><span class="meta">남은 추가 질문 2개</span></div>
+              <button class="btn primary">답하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const tabs = [...document.querySelectorAll('.tab')];
+  function show(id) {
+    tabs.forEach(t => {
+      const on = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', on);
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => show(t.getAttribute('aria-controls'))));
+  const start = location.hash.replace('#', '');
+  if (tabs.some(t => t.getAttribute('aria-controls') === start)) show(start);
+</script>

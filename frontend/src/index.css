@@ -14,6 +14,10 @@
   --color-pink: #efd4d4;
   --color-success: #1ea64a;
   --color-hairline: #333333;
+  /* 와이어프레임 보조값(학생 승인 2026-10-30): 검정의 투명도만 바꾼 선·보조 글자·옅은 면. */
+  --color-line: rgb(0 0 0 / 0.12);
+  --color-ink-60: rgb(0 0 0 / 0.6);
+  --color-fill: rgb(0 0 0 / 0.04);
 
   --radius-check: 6px;
   --radius-row: 8px;
@@ -46,11 +50,15 @@
     @apply bg-ink text-ink-inverse enabled:hover:bg-ink/80 [&:is(a)]:hover:bg-ink/80;
   }
   .btn-secondary {
-    @apply border-ink bg-canvas text-ink enabled:hover:bg-ink enabled:hover:text-ink-inverse [&:is(a)]:hover:bg-ink [&:is(a)]:hover:text-ink-inverse border;
+    @apply border-ink bg-canvas text-ink enabled:hover:bg-fill [&:is(a)]:hover:bg-fill border;
   }
   /* 흐름의 마지막 행동(예: '면접 시작')에만 쓴다. */
   .btn-coral {
     @apply border-ink bg-coral text-ink border;
+  }
+  /* 카드 안 가벼운 행동(와이어프레임 .btn.ghost): 테두리 없이 밑줄 글자. */
+  .btn-ghost {
+    @apply text-ink enabled:hover:bg-fill [&:is(a)]:hover:bg-fill min-h-[32px] border border-transparent bg-transparent px-1 text-[15px] underline underline-offset-[3px];
   }
   /* 검정 바탕 위 보조 버튼 */
   .btn-on-ink {
@@ -66,6 +74,10 @@
   .h2 {
     @apply text-[clamp(36px,5vw,64px)] leading-[1.12] font-normal tracking-[-0.025em];
   }
+  /* 앱 화면의 큰 제목(와이어프레임 .page-title h2). 40px을 넘지 않는다(POLISH H5). */
+  .page-title {
+    @apply text-[28px] leading-[1.25] font-normal tracking-[-0.02em] text-balance;
+  }
   .card-title {
     @apply text-[26px] leading-[1.3] font-medium tracking-[-0.02em];
   }
@@ -73,17 +85,25 @@
     @apply text-[15px] font-semibold;
   }
   .meta {
-    @apply text-[13px] tabular-nums opacity-70;
+    @apply text-ink-60 text-[13px] tabular-nums;
   }
 
+  /* 단계 색으로 칠한 큰 블록. 소개 화면처럼 단계 자체를 보여 줄 때만 쓴다(POLISH H6). */
   .block-card {
     @apply rounded-block flex flex-col gap-6 p-7;
   }
+  /* 화면 안 구역은 흰 카드 + 얇은 선으로 나눈다(와이어프레임 .card). */
+  .card {
+    @apply rounded-card border-line bg-canvas flex min-w-0 flex-col gap-4 border p-5;
+  }
+  .card-head {
+    @apply flex items-center justify-between gap-2;
+  }
   .inner-card {
-    @apply rounded-card bg-canvas p-[18px];
+    @apply rounded-card bg-fill p-[18px];
   }
   .row {
-    @apply rounded-row bg-canvas flex justify-between gap-2 px-3 py-[11px] text-[15px];
+    @apply rounded-row bg-fill flex justify-between gap-2 px-3 py-[11px] text-[15px];
   }
   .row-select {
     @apply hover:outline-ink cursor-pointer transition-[outline-color] duration-150 hover:outline-1 hover:-outline-offset-1;
@@ -93,7 +113,38 @@
   }
 
   .field {
-    @apply rounded-row border-ink bg-canvas focus:outline-ink w-full border px-3 py-[11px] text-[15px] outline-none focus:outline-2 focus:outline-offset-1;
+    @apply rounded-row border-line bg-canvas focus:border-ink focus:outline-ink w-full border px-3 py-[11px] text-[15px] transition-[border-color] duration-150 outline-none focus:outline-1 focus:-outline-offset-1;
+  }
+
+  /* 단계 칩: 단계 색은 이런 표시에만 쓴다(POLISH M2). */
+  .stage-chip {
+    @apply rounded-pill inline-flex items-center gap-2 self-start px-3 py-1 text-[13px] font-semibold;
+  }
+  /* 상태 칩: 모양과 글자를 같이 바꾼다(POLISH M4). */
+  .chip {
+    @apply rounded-pill border-line bg-canvas inline-flex items-center gap-1.5 border px-2.5 py-[3px] text-[13px] whitespace-nowrap;
+  }
+  .chip-ok {
+    @apply border-success before:bg-success before:size-2 before:rounded-full before:content-[''];
+  }
+  .chip-need {
+    @apply border-ink border-[1.5px] border-dashed;
+  }
+  .chip-miss {
+    @apply bg-coral border-transparent;
+  }
+  .chip-next {
+    @apply border-ink bg-ink text-ink-inverse;
+  }
+  /* 진행 막대: 칸마다 검정 1.5px 테두리, 채운 칸은 검정(DESIGN.md progress-meter). */
+  .meter {
+    @apply grid auto-cols-fr grid-flow-col gap-1;
+  }
+  .meter > span {
+    @apply border-ink rounded-pill h-2.5 border-[1.5px];
+  }
+  .meter > span[data-filled] {
+    @apply bg-ink;
   }
   .field-error {
     @apply rounded-row bg-pink mt-2 px-3 py-2 text-[15px];

@@ -11,7 +11,7 @@ describe('홈', () => {
     expect(screen.getByText(/붙여넣음/)).toBeInTheDocument()
   })
 
-  it('S1: 소개 → 가입 → 잠금 안내와 경험 등록', async () => {
+  it('S1: 소개 → 가입 → 잠금 안내와 이력서 입력', async () => {
     const user = userEvent.setup()
     renderApp('/')
     await user.click(screen.getAllByRole('link', { name: '가입하기' })[0])
@@ -21,7 +21,7 @@ describe('홈', () => {
     expect(
       await screen.findByText('경험 카드를 먼저 하나 확정해야 자소서를 쓰고 점검할 수 있어요.'),
     ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '경험 등록' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '이력서 입력' })).toHaveAttribute('href', '/resume')
     expect(screen.queryByRole('link', { name: '새로 쓰기' })).not.toBeInTheDocument()
   })
 })

@@ -1,7 +1,15 @@
 // docs/api.md를 따르는 목 API. 실제 서버가 붙으면 VITE_API_MOCK=false로 끈다.
 // AI 결과는 specs/mock-data.md 「AI 고정 동작」대로 고정한다.
 import { delay, http, HttpResponse } from 'msw'
-import type { CoverLetterItem, Fact, FactSource, Item, JudgeResult, Message } from '@/api/types'
+import type {
+  ActivityDraft,
+  CoverLetterItem,
+  Fact,
+  FactSource,
+  Item,
+  JudgeResult,
+  Message,
+} from '@/api/types'
 import {
   emptyCard,
   emptyStatus,
@@ -17,10 +25,12 @@ import {
   type StoredCheckSentence,
   type StoredCoverLetter,
   type StoredExperience,
+  type StoredResume,
   toCheck,
   toCheckSentence,
   toCoverLetter,
   toExperience,
+  toResume,
   tokenFor,
   userFromToken,
 } from '@/mocks/db'
@@ -114,20 +124,101 @@ const authHandlers = [
   }),
 ]
 
-// api.md 4절
-const experienceHandlers = [
-  http.post('/api/experiences', async ({ request }) => {
+/** 토큰의 계정이 가진 이력서. 아직 없으면 빈 이력서를 만들어 둔다(저장은 바뀔 때만). */
+function resumeOf(userId: string): StoredResume {
+  const db = getDb()
+  let resume = db.resumes.find((r) => r.userId === userId)
+  if (!resume) {
+    resume = { userId, text: null, drafts: [], updatedAt: null }
+    db.resumes.push(resume)
+  }
+  return resume
+}
+
+function touchResume(resume: StoredResume) {
+  resume.updatedAt = now()
+  save()
+}
+
+const optionalText = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
+const sameTitle = (title: string) => title.replace(/\s+/g, ' ').trim()
+
+/** 활동 한 줄에서 제목·시기를 뽑는다: 첫 괄호 앞(「」는 벗긴다)이 제목, 첫 괄호의 첫 부분이 시기. */
+function parseActivity(line: string, summary: string): Omit<ActivityDraft, 'id' | 'origin'> {
+  const paren = /[(（]([^)）]*)[)）]/.exec(line)
+  const head = paren ? line.slice(0, paren.index) : line
+  return {
+    title: sameTitle(head.replace(/[「」]/g, ' ')),
+    period: paren ? paren[1].split(/[,，]/)[0].trim() : '',
+    summary,
+  }
+}
+
+/** 이력서 글을 활동으로 나눈다(mock-data.md 「이력서 활동 나누기」). */
+function splitActivities(text: string) {
+  const lines = text.split('\n').map((l) => l.trim())
+  const bullets = lines.filter((l) => l.startsWith('- ')).map((l) => l.slice(2).trim())
+  if (bullets.length > 0) return bullets.map((line) => parseActivity(line, line))
+  return text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p !== '')
+    .map((p) => parseActivity(p.split('\n')[0], p))
+}
+
+// api.md 4절 이력서. 활동 나누기는 mock-data.md 고정 동작.
+const resumeHandlers = [
+  http.get('/api/resume', ({ request }) => {
     const user = userFromToken(request.headers.get('Authorization'))
     if (!user) return unauthenticated()
-    const { title, period } = await readJson(request)
-    if (isBlank(title)) return invalid('title', '필수 입력이에요.')
-    if (isBlank(period)) return invalid('period', '필수 입력이에요.')
+    return HttpResponse.json({ resume: toResume(resumeOf(user.id)) })
+  }),
+
+  http.post('/api/resume', async ({ request }) => {
+    const user = userFromToken(request.headers.get('Authorization'))
+    if (!user) return unauthenticated()
+    const { text } = await readJson(request)
+    if (isBlank(text)) return invalid('text', '이력서를 입력해 주세요.')
+    await wait(AI_DELAY)
+    const resume = resumeOf(user.id)
+    // 이미 있는 경험·초안과 제목이 같은 활동은 뺀다.
+    const seen = new Set(
+      [...userExperiences(user.id), ...resume.drafts].map((a) => sameTitle(a.title)),
+    )
+    const added: ActivityDraft[] = []
+    for (const activity of splitActivities(text as string)) {
+      if (!activity.title || seen.has(activity.title)) continue
+      seen.add(activity.title)
+      added.push({ id: newId(), ...activity, origin: 'ai' })
+    }
+    resume.text = text as string
+    resume.drafts.push(...added)
+    touchResume(resume)
+    return HttpResponse.json({ resume: toResume(resume), added })
+  }),
+
+  http.post('/api/resume/drafts/confirm', async ({ request }) => {
+    const user = userFromToken(request.headers.get('Authorization'))
+    if (!user) return unauthenticated()
+    const { draftIds } = await readJson(request)
+    if (
+      !Array.isArray(draftIds) ||
+      draftIds.length === 0 ||
+      draftIds.some((id) => typeof id !== 'string')
+    )
+      return invalid('draftIds', '확정할 활동을 골라 주세요.')
+    const resume = resumeOf(user.id)
+    const ids = [...new Set(draftIds as string[])]
+    const drafts = ids.map((id) => resume.drafts.find((d) => d.id === id))
+    if (drafts.some((d) => d === undefined)) return notFound()
+
     const at = now()
-    const experience: StoredExperience = {
+    const experiences = (drafts as ActivityDraft[]).map((draft): StoredExperience => ({
       id: newId(),
       userId: user.id,
-      title: (title as string).trim(),
-      period: (period as string).trim(),
+      title: draft.title,
+      period: draft.period,
+      summary: draft.summary,
       clues: [],
       itemStatus: emptyStatus(),
       card: emptyCard(),
@@ -135,12 +226,58 @@ const experienceHandlers = [
       messages: [],
       createdAt: at,
       updatedAt: at,
-    }
-    getDb().experiences.push(experience)
-    save()
-    return HttpResponse.json({ experience: toExperience(experience) }, { status: 201 })
+    }))
+    getDb().experiences.push(...experiences)
+    resume.drafts = resume.drafts.filter((d) => !ids.includes(d.id))
+    touchResume(resume)
+    return HttpResponse.json({ experiences: experiences.map(toExperience) }, { status: 201 })
   }),
 
+  http.post('/api/resume/drafts', async ({ request }) => {
+    const user = userFromToken(request.headers.get('Authorization'))
+    if (!user) return unauthenticated()
+    const { title, period, summary } = await readJson(request)
+    if (isBlank(title)) return invalid('title', '필수 입력이에요.')
+    const resume = resumeOf(user.id)
+    const draft: ActivityDraft = {
+      id: newId(),
+      title: (title as string).trim(),
+      period: optionalText(period),
+      summary: optionalText(summary),
+      origin: 'manual',
+    }
+    resume.drafts.push(draft)
+    touchResume(resume)
+    return HttpResponse.json({ draft }, { status: 201 })
+  }),
+
+  http.patch<{ draftId: string }>('/api/resume/drafts/:draftId', async ({ request, params }) => {
+    const user = userFromToken(request.headers.get('Authorization'))
+    if (!user) return unauthenticated()
+    const draft = resumeOf(user.id).drafts.find((d) => d.id === params.draftId)
+    if (!draft) return notFound()
+    const { title, period, summary } = await readJson(request)
+    if (title !== undefined && isBlank(title)) return invalid('title', '필수 입력이에요.')
+    if (typeof title === 'string') draft.title = title.trim()
+    if (period !== undefined) draft.period = optionalText(period)
+    if (summary !== undefined) draft.summary = optionalText(summary)
+    touchResume(resumeOf(user.id))
+    return HttpResponse.json({ draft })
+  }),
+
+  http.delete<{ draftId: string }>('/api/resume/drafts/:draftId', ({ request, params }) => {
+    const user = userFromToken(request.headers.get('Authorization'))
+    if (!user) return unauthenticated()
+    const resume = resumeOf(user.id)
+    if (!resume.drafts.some((d) => d.id === params.draftId)) return notFound()
+    resume.drafts = resume.drafts.filter((d) => d.id !== params.draftId)
+    touchResume(resume)
+    return new HttpResponse(null, { status: 204 })
+  }),
+]
+
+// api.md 4절 경험. 경험은 이력서 활동을 확정해서만 만든다(개별 생성 없음).
+const experienceHandlers = [
   http.get('/api/experiences', ({ request }) => {
     const user = userFromToken(request.headers.get('Authorization'))
     if (!user) return unauthenticated()
@@ -1012,6 +1149,7 @@ const checkHandlers = [
 
 export const handlers = [
   ...authHandlers,
+  ...resumeHandlers,
   ...experienceHandlers,
   ...conversationHandlers,
   ...factHandlers,

@@ -10,7 +10,7 @@
 | `/signup`, `/login`                | B 가입·로그인  | 불필요(로그인 상태면 `/cover-letters`로) | -                     |
 | `/cover-letters`                   | C 홈           | 필요                                     | 화면 안에서 잠금 안내 |
 | `/experiences`                     | D 경험 목록    | 필요                                     | -                     |
-| `/experiences/new`                 | E 경험 등록    | 필요                                     | -                     |
+| `/resume`                          | E 이력서 입력  | 필요                                     | -                     |
 | `/experiences/:id`                 | F 경험 상세    | 필요                                     | -                     |
 | `/cover-letters/paste`             | G 붙여넣기     | 필요                                     | 적용                  |
 | `/cover-letters/new`               | H 작성 시작    | 필요                                     | 적용                  |

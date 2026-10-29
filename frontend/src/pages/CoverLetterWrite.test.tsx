@@ -169,6 +169,9 @@ describe('I 문항별 작성', () => {
     expect(await screen.findByLabelText('응답', {}, AI_WAIT)).not.toHaveValue('')
     const used = screen.getByRole('region', { name: '근거 경험 카드' })
     expect(within(used).getByText(CAPSTONE)).toBeInTheDocument()
-    expect(getDb().coverLetters.filter((c) => c.kind === 'generated')).toHaveLength(1)
+    // 시드의 작성한 자소서(라라테크)는 빼고, 이 흐름에서 새로 생긴 것만 센다.
+    expect(
+      getDb().coverLetters.filter((c) => c.kind === 'generated' && !c.id.startsWith('seed-')),
+    ).toHaveLength(1)
   }, 10000)
 })

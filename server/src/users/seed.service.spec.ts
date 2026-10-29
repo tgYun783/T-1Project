@@ -1,6 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
+import { Types } from 'mongoose';
+import { SeedDataService } from '../seed/seed-data.service';
 import { SeedService } from './seed.service';
 import { User } from './user.schema';
 
@@ -12,10 +14,16 @@ describe('C1-6 seed user', () => {
   let findOneExec: jest.Mock;
   let create: jest.Mock;
   let userModel: { findOne: jest.Mock; create: jest.Mock };
+  let seedFor: jest.Mock;
+  const createdId = new Types.ObjectId();
 
   const buildService = async (): Promise<SeedService> => {
     const moduleRef = await Test.createTestingModule({
-      providers: [SeedService, { provide: getModelToken(User.name), useValue: userModel }],
+      providers: [
+        SeedService,
+        { provide: getModelToken(User.name), useValue: userModel },
+        { provide: SeedDataService, useValue: { seedFor } },
+      ],
     }).compile();
     return moduleRef.get(SeedService);
   };
@@ -24,8 +32,26 @@ describe('C1-6 seed user', () => {
     process.env.SEED_USER_EMAIL = SEED_EMAIL;
     process.env.SEED_USER_PASSWORD = SEED_PASSWORD;
     findOneExec = jest.fn().mockResolvedValue(null);
-    create = jest.fn().mockResolvedValue({});
+    create = jest.fn().mockResolvedValue({ _id: createdId });
+    seedFor = jest.fn().mockResolvedValue(undefined);
     userModel = { findOne: jest.fn(() => ({ exec: findOneExec })), create };
+  });
+
+  // 시드 데이터(명세 09)는 이번에 만든 계정에만 한 번 넣어야 재기동해도 경험·자소서가 두 벌 쌓이지 않는다.
+  it('seeds experiences/cover letter for the newly created user only', async () => {
+    const service = await buildService();
+    await service.onApplicationBootstrap();
+    expect(seedFor).toHaveBeenCalledTimes(1);
+    expect(seedFor).toHaveBeenCalledWith(createdId);
+  });
+
+  // 이미 있는 계정·다른 인스턴스가 먼저 만든 계정에는 시드 데이터를 다시 넣지 않는다.
+  it('does not seed data when the user already exists or on duplicate key', async () => {
+    findOneExec.mockResolvedValueOnce({ email: SEED_EMAIL });
+    await (await buildService()).onApplicationBootstrap();
+    create.mockRejectedValue(Object.assign(new Error('E11000 duplicate key'), { code: 11000 }));
+    await (await buildService()).onApplicationBootstrap();
+    expect(seedFor).not.toHaveBeenCalled();
   });
 
   afterEach(() => {

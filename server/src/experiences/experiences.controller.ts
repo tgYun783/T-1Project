@@ -18,9 +18,16 @@ import { Request, Response } from 'express';
 import { AuthUser, CurrentUser } from '../auth/current-user.decorator';
 import { ClueFileInterceptor } from './clue-file.interceptor';
 import { UploadedClueFile, validateFileClue, validateTextClue } from './clue.validation';
+import {
+  ConversationAnswerDto,
+  ConversationDto,
+  ConversationService,
+  ConversationStartDto,
+} from './conversation.service';
+import { validateAnswer } from './conversation.validation';
 import { ClueDto, ExperienceDto, FactDto } from './experience.dto';
 import { validateCreateExperience, validateUpdateExperience } from './experience.validation';
-import { validateCreateFact, validateUpdateFact } from './fact.validation';
+import { validateConfirmFact, validateCreateFact, validateUpdateFact } from './fact.validation';
 import { ExperiencesService } from './experiences.service';
 
 // RFC 5987: 한글 이름은 filename*로 싣고, 옛 브라우저용 filename에는 ASCII만 남긴다. 헤더 주입을 막으려 따옴표·제어문자도 바꾼다.
@@ -36,7 +43,10 @@ function contentDisposition(fileName: string): string {
 // 경험 API(api.md 4절). @Public()이 없으므로 전역 가드가 토큰을 요구하고, 사용자는 토큰에서만 얻는다.
 @Controller('experiences')
 export class ExperiencesController {
-  constructor(private readonly service: ExperiencesService) {}
+  constructor(
+    private readonly service: ExperiencesService,
+    private readonly conversation: ConversationService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -93,6 +103,33 @@ export class ExperiencesController {
     });
   }
 
+  // 대화 화면이 처음 열릴 때 그리는 값(api.md 5절). 대화 전이면 messages가 빈 배열이다.
+  @Get(':id/conversation')
+  async getConversation(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<ConversationDto> {
+    return this.conversation.get(user.id, id);
+  }
+
+  // 새 질문을 만들 때도 기존 질문을 돌려줄 때도 api.md 5절대로 200으로 고정한다(Nest POST 기본 201이 아님).
+  @Post(':id/conversation/start')
+  @HttpCode(HttpStatus.OK)
+  async startConversation(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ): Promise<ConversationStartDto> {
+    return this.conversation.start(user.id, id);
+  }
+
+  // 답하기도 api.md 5절대로 200. 본문 검증을 소유자 조회보다 먼저 해 400 여부로 남의 경험을 떠볼 수 없게 한다.
+  @Post(':id/conversation/answers')
+  @HttpCode(HttpStatus.OK)
+  async answerConversation(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<ConversationAnswerDto> {
+    return this.conversation.answer(user.id, id, validateAnswer(body));
+  }
+
   // 사용자가 카드에 직접 쓰는 사실(api.md 6절). 형식 검증을 소유자 조회보다 먼저 해 400 여부로 남의 경험을 떠볼 수 없게 한다.
   @Post(':id/facts')
   @HttpCode(HttpStatus.CREATED)
@@ -102,6 +139,19 @@ export class ExperiencesController {
     @Body() body: unknown,
   ): Promise<{ fact: FactDto }> {
     return { fact: await this.service.addFact(user.id, id, validateCreateFact(body)) };
+  }
+
+  // AI 후보를 사용자가 확인해 카드에 넣는다(api.md 6절). Nest POST 기본 201이 아니라 api.md대로 200.
+  // 형식 검증을 소유자 조회보다 먼저 해 400 여부로 남의 경험을 떠볼 수 없게 한다.
+  @Post(':id/facts/:factId/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmFact(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('factId') factId: string,
+    @Body() body: unknown,
+  ): Promise<{ fact: FactDto }> {
+    return { fact: await this.service.confirmFact(user.id, id, factId, validateConfirmFact(body)) };
   }
 
   @Patch(':id/facts/:factId')

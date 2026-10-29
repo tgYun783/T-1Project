@@ -12,6 +12,8 @@ services:
       RELEASE_ID: ${RELEASE_ID:-dev}
       SEED_USER_EMAIL: seeker@example.com
       SEED_USER_PASSWORD: loopthon-2026
+      # 제출 요건이 app에서 이 줄을 찾는다. 실제로 키를 쓰는 곳은 server이고 nginx는 이 값을 쓰지 않는다.
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
     depends_on:
       - server
 

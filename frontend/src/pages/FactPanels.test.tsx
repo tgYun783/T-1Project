@@ -56,16 +56,18 @@ describe('사실 후보·경험 카드', () => {
     expect(await within(situation).findByText('비어 있음')).toBeInTheDocument()
   })
 
-  it('S2: 가입 → 경험 등록 → 직접 추가 → 카드에 추가 → 자소서에서 새로 쓰기', async () => {
+  it('S2: 가입 → 이력서 입력 → 경험 만들기 → 직접 추가 → 카드에 추가 → 자소서에서 새로 쓰기', async () => {
     const user = userEvent.setup()
     renderApp('/signup')
     await user.type(screen.getByLabelText('이메일'), 's2@example.com')
     await user.type(screen.getByLabelText('비밀번호'), 'freshpassword1')
     await user.click(screen.getByRole('button', { name: '가입하기' }))
-    await user.click(await screen.findByRole('link', { name: '경험 등록' }))
-    await user.type(await screen.findByLabelText('제목'), '내 프로젝트')
+    await user.click(await screen.findByRole('link', { name: '이력서 입력' }))
+    await user.click(await screen.findByRole('button', { name: '활동 직접 추가' }))
+    await user.type(screen.getByLabelText('활동 이름'), '내 프로젝트')
     await user.type(screen.getByLabelText('대략적 시기'), '2025년 여름')
-    await user.click(screen.getByRole('button', { name: '대화 시작' }))
+    await user.click(screen.getByRole('button', { name: '목록에 추가' }))
+    await user.click(await screen.findByRole('button', { name: '경험 만들기' }))
     await user.click(await screen.findByRole('button', { name: '직접 추가' }))
     await user.selectOptions(screen.getByLabelText('항목'), '역할')
     await user.type(screen.getByLabelText('내용'), '백엔드를 맡았다')

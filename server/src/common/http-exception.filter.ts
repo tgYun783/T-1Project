@@ -79,7 +79,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const error: ErrorBody['error'] = { code, message };
-    if (code === 'VALIDATION' && Array.isArray(obj.details)) {
+    // details는 프런트가 칸·카드별로 표시해야 하는 코드만 살린다(NO_CONFIRMED_FACTS는 문제 카드 목록, api.md 7절 ②).
+    if ((code === 'VALIDATION' || code === 'NO_CONFIRMED_FACTS') && Array.isArray(obj.details)) {
       error.details = obj.details;
     }
     return { status, body: { error } };

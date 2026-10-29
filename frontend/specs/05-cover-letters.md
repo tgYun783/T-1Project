@@ -25,6 +25,8 @@
 
 ### 작성함 (`kind: generated`) — R13
 
+- 배치(학생 답 2026-10-30): 왼쪽 넓은 칸에 자소서(문항과 응답을 큰 카드로), 오른쪽 좁은 칸에 그 자소서에 쓴 경험 카드를 세로로 쌓는다. 응답을 누르면 오른쪽에서 그 응답의 근거 카드가 강조된다. 자세한 배치는 docs/design/wireframes/를 따른다.
+
 - 문항마다:
   - 문항 글, 응답 글
   - `근거 경험 카드`: `usedExperienceIds`의 경험 제목 목록. 카드마다 보조 버튼 `보강하기`(→ `/experiences/:id?returnTo=/cover-letters/:id/items/:itemId`)

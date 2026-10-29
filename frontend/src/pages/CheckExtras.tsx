@@ -133,7 +133,7 @@ function CandidateRow({
   }
 
   return (
-    <li className="row row-pending grid gap-3">
+    <li className="row row-pending grid justify-normal gap-3">
       <div className="flex items-center justify-between gap-3">
         <span>{candidate.text}</span>
         <span className="meta whitespace-nowrap">AI 제안·미확인</span>
@@ -253,7 +253,10 @@ export function CheckCandidates({
   if (check.candidates.length === 0) return null
   return (
     <StageBlock stage="check" className="grid content-start gap-3">
-      <h2 className="h2">카드에 넣을 사실</h2>
+      <div className="card-head">
+        <h2 className="text-[17px] font-semibold">카드에 넣을 사실</h2>
+        <span className="meta">{check.candidates.length}</span>
+      </div>
       <ul className="grid gap-2" aria-label="카드에 넣을 사실 목록">
         {check.candidates.map((c) => (
           <CandidateRow

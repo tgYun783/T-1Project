@@ -73,6 +73,34 @@ export function validateCreateFact(body: unknown): FactInput {
   return { item: obj.item as Item, text: text!, source: source as ConfirmedSource, clueId };
 }
 
+export interface ConfirmFactInput {
+  source: ConfirmedSource;
+  clueId: Types.ObjectId | null;
+  text?: string;
+  item?: Item;
+}
+
+// 후보 확정: source는 필수이고 said|clue만(ai_unverified는 400, C1). clue면 clueId 필수. text·item은 보냈을 때만 고친다(api.md 6절).
+export function validateConfirmFact(body: unknown): ConfirmFactInput {
+  const obj = asObject(body);
+  const details: FieldError[] = [];
+  const source = obj.source;
+  if (!isConfirmedSource(source)) details.push({ field: 'source', reason: FACT_REASONS.source });
+  const clueId = source === 'clue' ? parseClueId(obj.clueId, details) : null;
+  const input: Omit<ConfirmFactInput, 'source'> = { clueId };
+  if ('text' in obj) {
+    const text = trimmed(obj.text);
+    if (text === null) details.push({ field: 'text', reason: FACT_REASONS.text });
+    else input.text = text;
+  }
+  if ('item' in obj) {
+    if (isItem(obj.item)) input.item = obj.item;
+    else details.push({ field: 'item', reason: FACT_REASONS.item });
+  }
+  throwIfAny(details);
+  return { source: source as ConfirmedSource, ...input };
+}
+
 // PATCH: 보낸 칸만 고친다. source를 보내면 POST와 같은 규칙(clue면 clueId 필수, said면 단서 연결을 끊음).
 // source 없이 clueId만 보내면 지금 출처가 clue일 때만 의미가 있으므로 서비스가 기존 사실과 합쳐 확인한다.
 export function validateUpdateFact(body: unknown): Partial<FactInput> {

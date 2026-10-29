@@ -24,7 +24,8 @@ describe('목 API ② 붙여넣은 자소서', () => {
   it('시드 자소서를 조회한다', async () => {
     await login()
     const { coverLetters } = await api.listCoverLetters()
-    expect(coverLetters).toHaveLength(1)
+    // 시드: 붙여넣은 자소서(가나다소프트, 최근)와 작성한 자소서(라라테크).
+    expect(coverLetters).toHaveLength(2)
     const seed = coverLetters[0]
     expect(seed).toMatchObject({ kind: 'pasted', title: '가나다소프트 백엔드 지원' })
     expect(seed).not.toHaveProperty('userId')
@@ -121,7 +122,8 @@ describe('목 API ② 작성 시작·문항별 응답', () => {
   it('확정 사실이 없는 카드는 고를 수 없다', async () => {
     await login()
     const { coverLetter } = await generate()
-    const { experience } = await api.createExperience({ title: '빈 경험', period: '2024년' })
+    const { draft } = await api.addDraft({ title: '빈 경험', period: '2024년' })
+    const [experience] = (await api.confirmDrafts([draft.id])).experiences
     await expect(
       api.selectExperiences(coverLetter.id, coverLetter.items[0].id, [experience.id]),
     ).rejects.toMatchObject({ status: 400, code: 'NO_CONFIRMED_FACTS' })

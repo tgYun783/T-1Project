@@ -25,10 +25,25 @@ export type Clue = {
   createdAt: string
 }
 
+export type ActivityDraft = {
+  id: string
+  title: string
+  period: string
+  summary: string
+  origin: 'ai' | 'manual'
+}
+
+export type Resume = {
+  text: string | null
+  drafts: ActivityDraft[]
+  updatedAt: string | null
+}
+
 export type Experience = {
   id: string
   title: string
   period: string
+  summary: string
   clues: Clue[]
   itemStatus: ItemStatusMap
   card: Record<Item, Fact[]>

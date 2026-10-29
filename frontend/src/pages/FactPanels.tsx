@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from 'react'
 import { api, ApiError } from '@/api/client'
 import type { Clue, Experience, Fact, FactSource, Item } from '@/api/types'
 import { StageBlock } from '@/components/StageBlock'
-import { StatusBadge, StatusRow } from '@/components/Status'
+import { StatusBadge } from '@/components/Status'
 import { ITEM_LABELS, ITEM_ORDER } from '@/lib/cards'
 
 type FormValues = { item: Item; text: string; source: FactSource; clueId?: string }
@@ -168,20 +168,23 @@ export function CandidatePanel({
   }
 
   return (
-    <StageBlock stage="experience" className="grid gap-3">
-      <h2 className="h2">확인할 사실</h2>
+    <StageBlock stage="experience" className="gap-3.5">
+      <div className="card-head">
+        <h2 className="label">확인할 사실</h2>
+        <span className="meta">{experience.candidates.length}</span>
+      </div>
       {experience.candidates.length === 0 && (
         <div className="row row-pending">확인할 사실이 없어요</div>
       )}
       {experience.candidates.map((c) => (
-        <div key={c.id} className="grid gap-2">
-          <div className="row row-pending items-start">
-            <span>
-              <span className="label mr-2">{ITEM_LABELS[c.item]}</span>
-              {c.text}
-            </span>
+        // 아직 사실이 아니라서 점선 상자 하나에 항목·상태·내용·행동을 묶는다(와이어프레임 .row.pending).
+        <div key={c.id} className="row row-pending grid justify-normal gap-2 px-3.5 py-3">
+          <span className="meta">
+            {ITEM_LABELS[c.item]}
+            <span aria-hidden> · </span>
             <StatusBadge kind="ai_unverified" />
-          </div>
+          </span>
+          <span>{c.text}</span>
           {confirming === c.id ? (
             <FactForm
               clues={experience.clues}
@@ -193,7 +196,7 @@ export function CandidatePanel({
               onCancel={() => setConfirming(null)}
             />
           ) : (
-            <div className="flex gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 className="btn btn-sm btn-secondary"
@@ -203,7 +206,7 @@ export function CandidatePanel({
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-secondary"
+                className="btn btn-ghost"
                 onClick={() => void discard(c).catch(() => {})}
               >
                 버리기
@@ -260,17 +263,38 @@ export function CardPanel({
   }
 
   return (
-    <StageBlock stage="experience" className="grid gap-3">
-      <h2 className="h2">경험 카드</h2>
+    <StageBlock stage="experience" className="gap-3.5">
+      <div className="card-head">
+        <h2 className="label">경험 카드</h2>
+        {!adding && (
+          <button type="button" className="btn btn-ghost" onClick={() => setAdding(true)}>
+            직접 추가
+          </button>
+        )}
+      </div>
+      {adding && (
+        <FactForm
+          clues={experience.clues}
+          initial={{ item: 'situation', text: '' }}
+          withItem
+          withSource
+          submitLabel="카드에 추가"
+          onSubmit={add}
+          onCancel={() => setAdding(false)}
+        />
+      )}
+      {/* 항목 이름은 작은 이름표, 그 아래 사실 글과 출처(와이어프레임 경험 카드). */}
       {ITEM_ORDER.map((item) => {
         const facts = experience.card[item]
         return (
-          <section key={item} aria-label={`카드 ${ITEM_LABELS[item]}`} className="grid gap-2">
-            <h3 className="label">{ITEM_LABELS[item]}</h3>
-            {facts.length === 0 && <div className="row row-pending">비어 있음</div>}
+          <section key={item} aria-label={`카드 ${ITEM_LABELS[item]}`} className="grid gap-1">
+            <h3 className="meta">{ITEM_LABELS[item]}</h3>
+            {facts.length === 0 && (
+              <div className="row row-pending text-ink-60 py-1.5">비어 있음</div>
+            )}
             {facts.map((f) => (
-              <div key={f.id} className="grid gap-2">
-                <StatusRow kind={f.source === 'clue' ? 'clue' : 'said'}>{f.text}</StatusRow>
+              <div key={f.id} className="grid gap-1">
+                <p className="text-[15px]">{f.text}</p>
                 {editing === f.id ? (
                   <FactForm
                     clues={experience.clues}
@@ -282,17 +306,20 @@ export function CardPanel({
                     onCancel={() => setEditing(null)}
                   />
                 ) : (
-                  <div className="flex gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="meta mr-auto">
+                      <StatusBadge kind={f.source === 'clue' ? 'clue' : 'said'} />
+                    </span>
                     <button
                       type="button"
-                      className="btn btn-sm btn-secondary"
+                      className="btn btn-ghost"
                       onClick={() => setEditing(f.id)}
                     >
                       고치기
                     </button>
                     <button
                       type="button"
-                      className="btn btn-sm btn-secondary"
+                      className="btn btn-ghost"
                       onClick={() => void remove(f).catch(() => {})}
                     >
                       지우기
@@ -304,27 +331,6 @@ export function CardPanel({
           </section>
         )
       })}
-      {adding ? (
-        <FactForm
-          clues={experience.clues}
-          initial={{ item: 'situation', text: '' }}
-          withItem
-          withSource
-          submitLabel="카드에 추가"
-          onSubmit={add}
-          onCancel={() => setAdding(false)}
-        />
-      ) : (
-        <div>
-          <button
-            type="button"
-            className="btn btn-sm btn-secondary"
-            onClick={() => setAdding(true)}
-          >
-            직접 추가
-          </button>
-        </div>
-      )}
     </StageBlock>
   )
 }

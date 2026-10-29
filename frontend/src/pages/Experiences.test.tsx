@@ -1,15 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { setToken } from '@/api/client'
-import { AuthProvider } from '@/auth/AuthProvider'
-import { getDb, tokenFor } from '@/mocks/db'
-import ExperienceNew from '@/pages/ExperienceNew'
+import { getDb } from '@/mocks/db'
 import { renderApp } from '@/test/render'
-
-function Probe() {
-  return <p>이동: {useLocation().pathname}</p>
-}
 
 describe('경험 목록', () => {
   it('시드 경험 두 개와 항목 칸이 보인다', async () => {
@@ -17,54 +9,30 @@ describe('경험 목록', () => {
     expect(await screen.findByText('캡스톤디자인 학과 공지 알림 앱')).toBeInTheDocument()
     expect(screen.getByText('교내 해커톤 동아리 회비 정산 웹')).toBeInTheDocument()
     expect(screen.getAllByText('상황')).toHaveLength(2)
-    expect(screen.getByRole('link', { name: '경험 추가' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '이력서에서 활동 추가' })).toHaveAttribute(
       'href',
-      '/experiences/new',
+      '/resume',
     )
   })
-})
 
-describe('경험 등록', () => {
-  it('단서 없이 제목·시기를 넣고 대화 시작을 누르면 경험 상세로 간다', async () => {
-    renderApp('/experiences/new', { loggedIn: true })
+  it('경험이 없으면 점선 행과 이력서 입력 버튼이 보인다', async () => {
+    getDb().experiences = []
+    renderApp('/experiences', { loggedIn: true })
+    expect(await screen.findByText('아직 경험이 없어요')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '이력서 입력' })).toHaveAttribute('href', '/resume')
+  })
+
+  it('경험 제목을 누르면 경험 상세가 열린다', async () => {
+    renderApp('/experiences', { loggedIn: true })
     const user = userEvent.setup()
-    await user.type(await screen.findByLabelText('제목'), '새 경험')
-    await user.type(screen.getByLabelText('대략적 시기'), '2025년 가을')
-    await user.click(screen.getByRole('button', { name: '대화 시작' }))
-    expect(await screen.findByRole('heading', { name: '새 경험' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('link', { name: '교내 해커톤 동아리 회비 정산 웹' }))
+    expect(
+      await screen.findByRole('heading', { name: '교내 해커톤 동아리 회비 정산 웹' }),
+    ).toBeInTheDocument()
+    // 대화가 없는 경험이라 첫 질문까지 기다려야 테스트가 끝난 뒤 상태 갱신이 남지 않는다.
+    expect(
+      await screen.findByText('이 경험에서 해결하려던 문제는 무엇이었나요?'),
+    ).toBeInTheDocument()
     expect(screen.queryByText('없는 페이지예요')).not.toBeInTheDocument()
-  })
-
-  it('글 단서를 올리고 경험 상세 주소로 간다', async () => {
-    setToken(tokenFor(getDb().users[0].id))
-    render(
-      <MemoryRouter initialEntries={['/experiences/new']}>
-        <AuthProvider>
-          <Routes>
-            <Route path="/experiences/new" element={<ExperienceNew />} />
-            <Route path="/experiences/:id" element={<Probe />} />
-          </Routes>
-        </AuthProvider>
-      </MemoryRouter>,
-    )
-    const user = userEvent.setup()
-    await user.type(screen.getByLabelText('제목'), '단서 경험')
-    await user.type(screen.getByLabelText('대략적 시기'), '2025년 여름')
-    await user.click(screen.getByRole('button', { name: '글로 추가' }))
-    await user.type(screen.getByLabelText('단서 내용'), '발표 자료를 만들었다')
-    await user.click(screen.getByRole('button', { name: '대화 시작' }))
-    expect(await screen.findByText(/이동: \/experiences\/.+/)).toBeInTheDocument()
-    expect(getDb().experiences.some((e) => e.title === '단서 경험' && e.clues.length === 1)).toBe(
-      true,
-    )
-  })
-
-  it('제목을 비우면 필수 입력이에요가 보이고 이동하지 않는다', async () => {
-    renderApp('/experiences/new', { loggedIn: true })
-    const user = userEvent.setup()
-    await user.type(await screen.findByLabelText('대략적 시기'), '2025년')
-    await user.click(screen.getByRole('button', { name: '대화 시작' }))
-    expect(await screen.findByText('필수 입력이에요.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '대화 시작' })).toBeInTheDocument()
   })
 })

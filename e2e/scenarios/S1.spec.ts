@@ -17,12 +17,12 @@ test("S1 처음 온 취준생이 가입하면 경험부터 등록하라는 안�
   await page.getByLabel("비밀번호").fill("e2e-password-2026")
   await page.getByRole("button", { name: "가입하기" }).click()
 
-  // expected: 로그인된 상태로 홈이 열리고, 경험부터 확정하라는 안내와 '경험 등록'이 보이며 '새로 쓰기'는 없다
+  // expected: 로그인된 상태로 홈이 열리고, 경험부터 확정하라는 안내와 '이력서 입력'이 보이며 '새로 쓰기'는 없다
   await expect(page.getByRole("button", { name: "로그아웃" })).toBeVisible()
   await expect(
     page.getByText("경험 카드를 먼저 하나 확정해야 자소서를 쓰고 점검할 수 있어요."),
   ).toBeVisible()
-  await expect(page.getByRole("link", { name: "경험 등록", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "이력서 입력", exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "새로 쓰기" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "새로 쓰기" })).toHaveCount(0)
 })

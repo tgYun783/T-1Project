@@ -8,11 +8,11 @@ import CoverLetterPaste from '@/pages/CoverLetterPaste'
 import CoverLetterWrite from '@/pages/CoverLetterWrite'
 import AuthPage from '@/pages/AuthPage'
 import ExperienceDetail from '@/pages/ExperienceDetail'
-import ExperienceNew from '@/pages/ExperienceNew'
 import Experiences from '@/pages/Experiences'
 import Home from '@/pages/Home'
 import Intro from '@/pages/Intro'
 import NotFound from '@/pages/NotFound'
+import Resume from '@/pages/Resume'
 
 // 화면은 specs/ 순서대로 하나씩 추가한다.
 export default function App() {
@@ -25,7 +25,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route path="/cover-letters" element={<Home />} />
           <Route path="/experiences" element={<Experiences />} />
-          <Route path="/experiences/new" element={<ExperienceNew />} />
+          <Route path="/resume" element={<Resume />} />
           <Route path="/experiences/:id" element={<ExperienceDetail />} />
           <Route element={<RequireUnlocked />}>
             <Route path="/cover-letters/paste" element={<CoverLetterPaste />} />

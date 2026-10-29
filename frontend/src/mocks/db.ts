@@ -1,6 +1,7 @@
 // 백엔드가 붙기 전까지 쓰는 목 데이터. 모양은 docs/api.md 2절, 시드는 specs/mock-data.md 「시드」.
 // 새로고침해도 남도록 localStorage에 둔다(실제 서버의 DB 역할).
 import type {
+  ActivityDraft,
   Check,
   CheckSentence,
   CoverLetter,
@@ -10,6 +11,7 @@ import type {
   ItemStatusMap,
   JudgeResult,
   Message,
+  Resume,
   User,
 } from '@/api/types'
 
@@ -21,6 +23,8 @@ type StoredUser = User & { password: string }
 /** 저장용 경험: 응답에는 userId·messages를 빼고 내보낸다. */
 export type StoredExperience = Experience & { userId: string; messages: Message[] }
 export type StoredCoverLetter = CoverLetter & { userId: string }
+/** 저장용 이력서: 계정당 하나(api.md 4절). */
+export type StoredResume = Resume & { userId: string }
 /** 저장용 점검 문장: 판정 대상 기준·후보 항목·후보 경험은 목 판정에만 쓰고 응답에는 뺀다. */
 export type StoredCheckSentence = CheckSentence & {
   criteria: JudgeResult['id'][]
@@ -36,6 +40,7 @@ export type StoredCheck = Omit<Check, 'sentences'> & {
 
 type Db = {
   users: StoredUser[]
+  resumes: StoredResume[]
   experiences: StoredExperience[]
   coverLetters: StoredCoverLetter[]
   checks: StoredCheck[]
@@ -43,7 +48,7 @@ type Db = {
 }
 
 // 모양이 바뀌면 키를 올려 예전 저장본을 버린다.
-const STORAGE_KEY = 't1-mock-db-v3'
+const STORAGE_KEY = 't1-mock-db-v4'
 // 처음 쓸 때 만든다.
 let db: Db | null = null
 // 단서 파일은 보관만 한다. localStorage에 넣기엔 커서 메모리에만 두고, 새로고침하면 사라진다.
@@ -74,9 +79,40 @@ export const ITEM_QUESTIONS: Record<Item, string> = {
   meaning: '이 경험이 지금 지원에 어떤 의미가 있나요?',
 }
 
+// 시드 이력서 글(mock-data.md 「이력서」). 경험·초안의 summary는 이 글에서 해당 줄이다.
+const RESUME_LINES = {
+  capstone: '캡스톤디자인 「학과 공지 알림 앱」 (2025년 1학기, 4인 팀, 백엔드·공지 크롤러 담당)',
+  hackathon: '교내 해커톤 「동아리 회비 정산 웹」 (2025년 여름, 5인 팀 팀장)',
+  club: '프로그래밍 동아리 운영진 (2024년, 스터디 일정 관리)',
+}
+const RESUME_TEXT = [
+  '컴퓨터공학과 4학년(2026년 2월 졸업 예정)',
+  `- ${RESUME_LINES.capstone}`,
+  `- ${RESUME_LINES.hackathon}`,
+  `- ${RESUME_LINES.club}`,
+].join('\n')
+
+// 작성한 자소서 문항 1 응답: 두 카드의 확정 사실만 이어 쓴 문단(와이어프레임 3번 글).
+const GENERATED_ANSWER =
+  '학과 공지가 홈페이지에만 올라와 학생들이 신청 마감을 자주 놓치는 문제가 있었습니다. 저는 4명이 함께한 캡스톤디자인에서 백엔드와 공지 크롤러를 맡아, 공지 게시판을 10분마다 확인해 새 글이 올라오면 앱 푸시를 보내는 크롤러를 직접 만들었습니다. 학과 단톡방에 공유해 한 학기 동안 시험 운영했고, 공지를 놓쳤다는 말이 줄었다는 반응을 들었습니다. 해커톤에서는 5명 팀의 팀장으로 기능 범위를 정하고, 회비 입금 내역을 엑셀로 받아 정산 화면에 올리는 기능을 만들어 48시간 안에 시연까지 마쳤습니다.'
+
 function seed(): Db {
   const userId = 'u1'
   const at = (day: number, minute = 0) => new Date(Date.UTC(2026, 9, day, 9, minute)).toISOString()
+
+  const clubDraft: ActivityDraft = {
+    id: 'seed-draft-club',
+    title: '프로그래밍 동아리 운영진',
+    period: '2024년',
+    summary: RESUME_LINES.club,
+    origin: 'ai',
+  }
+  const resume: StoredResume = {
+    userId,
+    text: RESUME_TEXT,
+    drafts: [clubDraft],
+    updatedAt: at(18),
+  }
 
   const fact = (
     id: string,
@@ -120,6 +156,7 @@ function seed(): Db {
     userId,
     title: '캡스톤디자인 학과 공지 알림 앱',
     period: '2025년 1학기',
+    summary: RESUME_LINES.capstone,
     clues: [
       {
         id: 'seed-clue-c1',
@@ -170,6 +207,7 @@ function seed(): Db {
     userId,
     title: '교내 해커톤 동아리 회비 정산 웹',
     period: '2025년 여름',
+    summary: RESUME_LINES.hackathon,
     clues: [],
     itemStatus: emptyStatus(),
     card: hackathonCard,
@@ -191,10 +229,49 @@ function seed(): Db {
     updatedAt: at(22),
   }
 
+  const cardIds = [capstone.id, hackathon.id]
+  const generatedLetter: StoredCoverLetter = {
+    id: 'seed-cl-2',
+    userId,
+    kind: 'generated',
+    title: '라라테크 백엔드 지원',
+    body: null,
+    target: {
+      preferred: 'REST API 설계 경험, 협업 도구 사용 경험',
+      talent: '문제를 끝까지 파고드는 사람',
+    },
+    items: [
+      {
+        id: 'seed-cl-2-item-1',
+        question: '직무 관련 경험을 바탕으로 본인의 강점을 서술하시오',
+        recommendations: cardIds.map((experienceId) => ({
+          experienceId,
+          reason: '직접 만든 기능과 결과가 문항과 맞아요',
+        })),
+        selectedExperienceIds: cardIds,
+        answer: GENERATED_ANSWER,
+        usedExperienceIds: cardIds,
+        answerEdited: false,
+      },
+      {
+        id: 'seed-cl-2-item-2',
+        question: '협업 과정에서 갈등을 해결한 경험을 서술하시오',
+        recommendations: [],
+        selectedExperienceIds: [],
+        answer: null,
+        usedExperienceIds: [],
+        answerEdited: false,
+      },
+    ],
+    createdAt: at(21),
+    updatedAt: at(21),
+  }
+
   return {
     users: [{ id: userId, ...SEED_USER }],
+    resumes: [resume],
     experiences: [capstone, hackathon],
-    coverLetters: [coverLetter],
+    coverLetters: [coverLetter, generatedLetter],
     checks: [],
     seq: 1,
   }
@@ -256,6 +333,11 @@ export function toExperience({
   ...experience
 }: StoredExperience): Experience {
   return experience
+}
+
+/** 저장용 이력서에서 응답 모양(api.md Resume)만 꺼낸다. */
+export function toResume({ userId: _userId, ...resume }: StoredResume): Resume {
+  return resume
 }
 
 /** 저장용 자소서에서 응답 모양(api.md CoverLetter)만 꺼낸다. */

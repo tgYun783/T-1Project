@@ -1,4 +1,5 @@
 import type {
+  ActivityDraft,
   AuthResult,
   Check,
   CheckSentence,
@@ -11,6 +12,7 @@ import type {
   Item,
   ItemStatusMap,
   Message,
+  Resume,
   User,
 } from '@/api/types'
 
@@ -96,6 +98,7 @@ async function authenticate(path: string, email: string, password: string) {
   return res
 }
 
+export type DraftInput = { title: string; period?: string; summary?: string }
 export type ClueInput =
   | { type: 'text'; text: string }
   | { type: 'photo' | 'award' | 'document'; file: File; description?: string }
@@ -130,8 +133,17 @@ export const api = {
   login: (email: string, password: string) => authenticate('/auth/login', email, password),
   me: () => request<{ user: User }>('GET', '/auth/me'),
 
-  createExperience: (input: { title: string; period: string }) =>
-    request<{ experience: Experience }>('POST', '/experiences', input),
+  getResume: () => request<{ resume: Resume }>('GET', '/resume'),
+  splitResume: (text: string) =>
+    request<{ resume: Resume; added: ActivityDraft[] }>('POST', '/resume', { text }),
+  addDraft: (input: DraftInput) =>
+    request<{ draft: ActivityDraft }>('POST', '/resume/drafts', input),
+  updateDraft: (draftId: string, input: Partial<DraftInput>) =>
+    request<{ draft: ActivityDraft }>('PATCH', `/resume/drafts/${draftId}`, input),
+  deleteDraft: (draftId: string) => request<void>('DELETE', `/resume/drafts/${draftId}`),
+  confirmDrafts: (draftIds: string[]) =>
+    request<{ experiences: Experience[] }>('POST', '/resume/drafts/confirm', { draftIds }),
+
   listExperiences: () => request<{ experiences: Experience[] }>('GET', '/experiences'),
   getExperience: (id: string) => request<{ experience: Experience }>('GET', exp(id)),
   updateExperience: (id: string, input: { title?: string; period?: string }) =>

@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { api, ApiError } from '@/api/client'
 import { useAuth } from '@/auth/context'
-import { StageBlock } from '@/components/StageBlock'
 
 type Mode = 'signup' | 'login'
 
@@ -52,14 +51,11 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     }
   }
 
+  // 가운데 카드 하나에 제목·입력칸·주 버튼을 모은다. 큰 제목이 폼과 겨루지 않게 page-title로 둔다(POLISH H1·H5).
   return (
-    <main className="wrap grid gap-4 pt-12 md:grid-cols-[1fr_minmax(360px,480px)]">
-      <StageBlock stage="experience" className="justify-between md:min-h-[480px]">
-        <p className="label">계정</p>
-        <h1 className="h1">{copy.title}</h1>
-      </StageBlock>
-
-      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5 self-center py-6">
+    <main className="wrap py-12 md:py-20">
+      <form onSubmit={onSubmit} noValidate className="card mx-auto w-full max-w-[440px] gap-5 p-7">
+        <h1 className="page-title">{copy.title}</h1>
         <div>
           <label htmlFor="email" className="label mb-2 block">
             이메일
@@ -96,9 +92,13 @@ export default function AuthPage({ mode }: { mode: Mode }) {
         <button type="submit" className="btn btn-primary" disabled={busy}>
           {copy.submit}
         </button>
-        <p className="text-[15px]">
+        <p className="border-line text-ink-60 border-t pt-4 text-[15px]">
           {copy.switchText}{' '}
-          <Link to={copy.switchTo} state={location.state} className="underline underline-offset-4">
+          <Link
+            to={copy.switchTo}
+            state={location.state}
+            className="text-ink hover:text-ink-60 focus-visible:outline-ink underline underline-offset-4 transition-colors duration-150 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
             {copy.switchLink}
           </Link>
         </p>

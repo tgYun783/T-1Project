@@ -40,13 +40,13 @@ describe('목 API ① 계정·경험', () => {
     await expect(api.getExperience(id)).rejects.toMatchObject({ status: 404 })
   })
 
-  it('경험을 만들고 제목이 비면 400이다', async () => {
+  it('시드 경험의 summary는 이력서에서 해당 줄이다', async () => {
     await login()
-    const { experience } = await api.createExperience({ title: '새 경험', period: '2024년' })
-    expect(experience.itemStatus.situation).toBeNull()
-    await expect(api.createExperience({ title: ' ', period: '2024년' })).rejects.toMatchObject({
-      status: 400,
-    })
+    const { experiences } = await api.listExperiences()
+    const capstone = experiences.find((e) => e.title === '캡스톤디자인 학과 공지 알림 앱')!
+    expect(capstone.summary).toBe(
+      '캡스톤디자인 「학과 공지 알림 앱」 (2025년 1학기, 4인 팀, 백엔드·공지 크롤러 담당)',
+    )
   })
 
   it('글 단서를 추가한다', async () => {

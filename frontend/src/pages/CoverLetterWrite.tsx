@@ -3,11 +3,12 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, ApiError } from '@/api/client'
 import type { CoverLetter, CoverLetterItem, Experience } from '@/api/types'
 import { AiStatus } from '@/components/AiStatus'
+import { Meter } from '@/components/Meter'
 import { CheckMark } from '@/components/CheckMark'
-import { StageBlock } from '@/components/StageBlock'
-import { StatusRow } from '@/components/Status'
+import { StageBlock, StageChip } from '@/components/StageBlock'
 import { ErrorView, Loading } from '@/components/States'
 import { hasConfirmedFact, ITEM_LABELS, ITEM_ORDER } from '@/lib/cards'
+import { STATUS_INFO } from '@/lib/status'
 import { useAiCall } from '@/lib/useAiCall'
 import { useLoad } from '@/lib/useLoad'
 import NotFound from '@/pages/NotFound'
@@ -23,7 +24,13 @@ export default function CoverLetterWrite() {
     return { coverLetter, experiences }
   }, [id, itemId])
 
-  if (loaded.loading) return <Loading />
+  if (loaded.loading) {
+    return (
+      <main className="wrap pt-8">
+        <Loading />
+      </main>
+    )
+  }
   if (loaded.error?.status === 404) return <NotFound />
   if (loaded.error || !loaded.data) {
     return (
@@ -171,135 +178,159 @@ function Write({
   })
 
   return (
-    <main className="wrap grid gap-4 pt-12 pb-12">
-      <StageBlock stage="coverLetter" className="grid gap-5">
-        <div className="grid gap-2">
-          <div className="flex gap-1" aria-hidden>
-            {letter.items.map((i) => (
-              <span
-                key={i.id}
-                className={`rounded-pill h-2 flex-1 ${i.answer !== null ? 'bg-ink' : 'border-ink border'}`}
-              />
-            ))}
-          </div>
-          <p className="meta">{`응답 ${answered} / 문항 ${letter.items.length}`}</p>
-        </div>
-        <nav aria-label="문항 이동" className="flex flex-wrap gap-2">
-          {letter.items.map((i, n) => (
-            <Link
-              key={i.id}
-              to={`/cover-letters/${letterId}/items/${i.id}`}
-              aria-current={i.id === item.id ? 'page' : undefined}
-              className={`btn btn-sm btn-secondary ${i.id === item.id ? 'font-semibold' : ''}`}
-            >
-              {`문항 ${n + 1}`}
-            </Link>
-          ))}
-        </nav>
-        <div className="grid gap-2">
-          <p className="label">{letter.title || '제목 없음'}</p>
-          <h1 className="card-title">{item.question}</h1>
-        </div>
-      </StageBlock>
+    <main className="wrap grid gap-5 py-8">
+      <div className="grid justify-items-start gap-2">
+        <StageChip stage="coverLetter" />
+        <h1 className="page-title md:text-[36px]">{letter.title || '제목 없음'}</h1>
+      </div>
 
-      <StageBlock stage="coverLetter" className="grid gap-4">
-        <section aria-label="추천 경험 카드" className="grid gap-3">
-          <h2 className="h2">추천 경험 카드</h2>
-          <AiStatus busy={rec.busy} failed={rec.failed} error={rec.error} onRetry={rec.retry} />
-          {noFacts && (
-            <div role="alert" className="row row-pending items-center">
-              <span>확정된 사실이 있는 경험 카드가 없어요.</span>
-              <Link to="/experiences" className="btn btn-sm btn-secondary">
-                경험으로 가기
-              </Link>
+      <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_340px]">
+        <StageBlock stage="coverLetter" className="gap-5 p-7">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <nav aria-label="문항 이동" className="flex flex-wrap gap-1.5">
+              {letter.items.map((i, n) => {
+                const current = i.id === item.id
+                return (
+                  <Link
+                    key={i.id}
+                    to={`/cover-letters/${letterId}/items/${i.id}`}
+                    aria-current={current ? 'page' : undefined}
+                    className={`rounded-pill focus-visible:outline-ink border px-3.5 py-1.5 text-[15px] transition-colors duration-150 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                      current ? 'border-ink bg-lilac' : 'border-line hover:bg-fill'
+                    }`}
+                  >
+                    {`문항 ${n + 1}`}
+                  </Link>
+                )
+              })}
+            </nav>
+            <div className="grid w-44 gap-1.5">
+              <Meter cells={letter.items.map((i) => i.answer !== null)} />
+              <p className="meta text-right">{`응답 ${answered} / 문항 ${letter.items.length}`}</p>
+            </div>
+          </div>
+
+          <h2 className="text-[17px] font-semibold tracking-[-0.02em]">{item.question}</h2>
+
+          {item.answer !== null ? (
+            <div className="grid gap-2">
+              <label htmlFor="item-answer" className="label">
+                응답
+              </label>
+              <textarea
+                id="item-answer"
+                className="field max-w-[64ch] resize-y text-[17px] leading-[1.75]"
+                rows={9}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              {saveError && <p className="field-error">{saveError}</p>}
+            </div>
+          ) : (
+            <div className="row-pending rounded-row px-3.5 py-3">
+              <p className="text-[15px]">아직 만들지 않음</p>
             </div>
           )}
-          {showCards && (
-            <ul className="grid gap-3">
-              {recommended.map((r) => (
-                <CardOption
-                  key={r.experienceId}
-                  {...cardProps(byId.get(r.experienceId) as Experience)}
-                  reason={r.reason}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-        {showCards && others.length > 0 && (
-          <section aria-label="다른 카드" className="grid gap-3">
-            <h3 className="card-title">다른 카드</h3>
-            <ul className="grid gap-3">
-              {others.map((e) => (
-                <CardOption key={e.id} {...cardProps(e)} />
-              ))}
-            </ul>
-          </section>
-        )}
-        <AiStatus busy={gen.busy} failed={gen.failed} error={gen.error} onRetry={gen.retry} />
-        <div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={selected.length === 0 || gen.busy}
-            onClick={() => make()}
-          >
-            이 문항 만들기
-          </button>
-        </div>
-      </StageBlock>
 
-      {item.answer !== null && (
-        <StageBlock stage="coverLetter" className="grid gap-4">
-          <div>
-            <label htmlFor="item-answer" className="label mb-2 block">
-              응답
-            </label>
-            <textarea
-              id="item-answer"
-              className="field"
-              rows={8}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            {saveError && <p className="field-error">{saveError}</p>}
-          </div>
-          <div>
+          <AiStatus busy={gen.busy} failed={gen.failed} error={gen.error} onRetry={gen.retry} />
+
+          <div className="border-line flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              {item.answer !== null && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    disabled={saving || draft === item.answer}
+                    onClick={() => void save()}
+                  >
+                    응답 저장
+                  </button>
+                  {next ? (
+                    <Link
+                      to={`/cover-letters/${letterId}/items/${next.id}`}
+                      className="btn btn-sm btn-secondary"
+                    >
+                      다음 문항
+                    </Link>
+                  ) : (
+                    <Link to={`/cover-letters/${letterId}`} className="btn btn-sm btn-secondary">
+                      자소서 보기
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
             <button
               type="button"
-              className="btn btn-sm btn-secondary"
-              disabled={saving || draft === item.answer}
-              onClick={() => void save()}
+              className="btn btn-primary"
+              disabled={selected.length === 0 || gen.busy}
+              onClick={() => make()}
             >
-              응답 저장
+              이 문항 만들기
             </button>
           </div>
-          <section aria-label="근거 경험 카드" className="grid gap-2">
-            <h2 className="label">근거 경험 카드</h2>
-            <ul className="grid gap-2">
-              {item.usedExperienceIds.map((experienceId) => (
-                <li key={experienceId} className="row">
-                  {byId.get(experienceId)?.title ?? '지운 경험'}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <div>
-            {next ? (
-              <Link
-                to={`/cover-letters/${letterId}/items/${next.id}`}
-                className="btn btn-sm btn-secondary"
-              >
-                다음 문항
-              </Link>
-            ) : (
-              <Link to={`/cover-letters/${letterId}`} className="btn btn-sm btn-secondary">
-                자소서 보기
-              </Link>
-            )}
-          </div>
         </StageBlock>
-      )}
+
+        <aside className="grid gap-6">
+          <section aria-label="추천 경험 카드" className="grid gap-3">
+            <div className="card-head">
+              <h2 className="text-[13px] font-semibold">추천 경험 카드</h2>
+              {showCards && <span className="meta">{recommended.length}</span>}
+            </div>
+            <AiStatus busy={rec.busy} failed={rec.failed} error={rec.error} onRetry={rec.retry} />
+            {rec.busy &&
+              [0, 1].map((n) => <div key={n} aria-hidden className="skeleton rounded-card h-32" />)}
+            {noFacts && (
+              <div
+                role="alert"
+                className="row-pending rounded-row flex flex-col items-start gap-3 px-3.5 py-3"
+              >
+                <p className="text-[15px]">확정된 사실이 있는 경험 카드가 없어요.</p>
+                <Link to="/experiences" className="btn btn-sm btn-secondary">
+                  경험으로 가기
+                </Link>
+              </div>
+            )}
+            {showCards && recommended.length > 0 && (
+              <ul className="grid gap-3">
+                {recommended.map((r) => (
+                  <CardOption
+                    key={r.experienceId}
+                    {...cardProps(byId.get(r.experienceId) as Experience)}
+                    reason={r.reason}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+          {showCards && others.length > 0 && (
+            <section aria-label="다른 카드" className="grid gap-3">
+              <h3 className="text-[13px] font-semibold">다른 카드</h3>
+              <ul className="grid gap-3">
+                {others.map((e) => (
+                  <CardOption key={e.id} {...cardProps(e)} />
+                ))}
+              </ul>
+            </section>
+          )}
+          {item.answer !== null && (
+            <section aria-label="근거 경험 카드" className="grid gap-3">
+              <div className="card-head">
+                <h2 className="text-[13px] font-semibold">근거 경험 카드</h2>
+                <span className="meta">{item.usedExperienceIds.length}</span>
+              </div>
+              <ul className="grid gap-2">
+                {item.usedExperienceIds.map((experienceId) => (
+                  <li key={experienceId} className="row font-semibold">
+                    {byId.get(experienceId)?.title ?? '지운 경험'}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </aside>
+      </div>
 
       {confirming && (
         <div className="bg-ink/40 fixed inset-0 z-10 flex items-center justify-center p-6">
@@ -307,21 +338,21 @@ function Write({
             role="dialog"
             aria-modal="true"
             aria-labelledby="overwrite-title"
-            className="inner-card grid w-full max-w-[480px] gap-4"
+            className="card w-full max-w-[480px] p-7"
           >
-            <p id="overwrite-title" className="text-[15px]">
+            <p id="overwrite-title" className="text-[17px]">
               고친 내용이 새 응답으로 바뀌어요. 계속할까요?
             </p>
-            <div className="flex gap-3">
-              <button type="button" className="btn btn-sm btn-secondary" onClick={() => make(true)}>
-                바꾸기
-              </button>
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 className="btn btn-sm btn-secondary"
                 onClick={() => setConfirming(false)}
               >
                 취소
+              </button>
+              <button type="button" className="btn btn-sm btn-primary" onClick={() => make(true)}>
+                바꾸기
               </button>
             </div>
           </div>
@@ -348,48 +379,64 @@ function CardOption({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <li className="inner-card grid gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          aria-pressed={pressed}
-          className={`btn btn-sm btn-secondary ${pressed ? 'font-semibold' : ''}`}
-          onClick={onToggle}
-        >
-          {pressed && <CheckMark />}
-          {experience.title}
-        </button>
-        {usedIn.map((n) => (
-          <span key={n} className="meta">{`문항 ${n}에 사용 중`}</span>
-        ))}
-        <button
-          type="button"
-          aria-expanded={open}
-          className="btn btn-sm btn-secondary"
-          onClick={() => setOpen((o) => !o)}
-        >
-          사실 보기
-        </button>
-      </div>
-      {reason && <p className="text-[15px]">{reason}</p>}
+    <li
+      className={`rounded-card grid gap-2 border px-4 py-3.5 transition-[border-color,box-shadow] duration-150 ${
+        pressed ? 'border-ink ring-ink ring-1' : 'border-line'
+      }`}
+    >
+      <button
+        type="button"
+        aria-pressed={pressed}
+        className="rounded-row hover:bg-fill focus-visible:outline-ink -m-1.5 flex cursor-pointer items-start gap-2.5 p-1.5 text-left text-[15px] font-semibold transition-colors duration-150 outline-none focus-visible:outline-2"
+        onClick={onToggle}
+      >
+        {pressed ? (
+          <CheckMark />
+        ) : (
+          <span
+            aria-hidden
+            className="rounded-check border-ink size-[22px] shrink-0 border-[1.5px]"
+          />
+        )}
+        {experience.title}
+      </button>
+      {(experience.period || usedIn.length > 0) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {experience.period && <span className="meta">{experience.period}</span>}
+          {usedIn.map((n) => (
+            <span key={n} className="chip">{`문항 ${n}에 사용 중`}</span>
+          ))}
+        </div>
+      )}
+      {reason && <p className="text-ink-60 text-[15px]">{reason}</p>}
+      <button
+        type="button"
+        aria-expanded={open}
+        className="btn btn-ghost justify-self-start"
+        onClick={() => setOpen((o) => !o)}
+      >
+        사실 보기
+      </button>
       {open && (
         <div className="grid gap-2">
-          {ITEM_ORDER.flatMap((key) =>
-            experience.card[key].map((f) => (
-              <StatusRow key={f.id} kind={f.source === 'clue' ? 'clue' : 'said'}>
-                <span className="label mr-2">{ITEM_LABELS[key]}</span>
-                {f.text}
-              </StatusRow>
-            )),
-          )}
-          <div>
-            <Link
-              to={`/experiences/${experience.id}?returnTo=${encodeURIComponent(returnTo)}`}
-              className="btn btn-sm btn-secondary"
-            >
-              이 카드 보강하기
-            </Link>
-          </div>
+          <ul className="grid gap-1.5">
+            {ITEM_ORDER.flatMap((key) =>
+              experience.card[key].map((f) => (
+                <li key={f.id} className="rounded-row bg-fill grid gap-0.5 px-3 py-2">
+                  <span className="meta">
+                    {ITEM_LABELS[key]} · {STATUS_INFO[f.source === 'clue' ? 'clue' : 'said'].label}
+                  </span>
+                  <span className="text-[15px]">{f.text}</span>
+                </li>
+              )),
+            )}
+          </ul>
+          <Link
+            to={`/experiences/${experience.id}?returnTo=${encodeURIComponent(returnTo)}`}
+            className="btn btn-sm btn-secondary justify-self-start"
+          >
+            이 카드 보강하기
+          </Link>
         </div>
       )}
     </li>

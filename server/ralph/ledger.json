@@ -197,8 +197,143 @@
       "status": "pass",
       "fixCount": 1,
       "snapshot": "51013258130dce4d4315ed003ca4029bd25ba488"
+    },
+    {
+      "id": "C6-1",
+      "spec": "06-conversation.md",
+      "title": "`GET /api/experiences/:id/conversation`이 `{messages, itemStatus, candidates}`(대화 전이면 `messages: []`)를 돌려준다. `POST .../conversation/start`가 AI 첫 질문을 저장하고 `200 {question, itemStatus}`를 돌려주며, 이미 대화가 있으면 AI를 부르지 않고 마지막 AI 질문을 돌려준다(FakeAi 호출 횟수 단언). AI에 넘긴 입력에 설명 있는 파일 단서의 설명·텍스트 단서는 있고, 설명 없는 파일 단서와 파일 이름은 없다(FakeAi 기록 단언). AI 실패 → 502, 메시지 0개 그대로.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "4d47261f3e9c48abd23349ba29fb21cb5d36ac0f"
+    },
+    {
+      "id": "C6-2",
+      "spec": "06-conversation.md",
+      "title": "`POST .../conversation/answers` `{text}` → `200 {answer, question, itemStatus, newCandidates}`. 빈 글 400, start 전 `409 CONVERSATION_NOT_STARTED`. 답 사이에 추가한 단서가 다음 AI 입력에 들어간다. `newCandidates`는 `candidate`·`ai_unverified`·`origin: conversation`이고 경험의 `candidates`에 쌓인다. AI 실패(FakeAi 실패 주입) → 502이고 메시지 수·후보 수·`itemStatus`가 호출 전과 같다. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "0644231da527d48d61c83f391c312d6c25655b91"
+    },
+    {
+      "id": "C6-3",
+      "spec": "06-conversation.md",
+      "title": "`POST .../facts/:factId/confirm`이 후보를 `confirmed`로 바꿔 `card`에 넣고 `candidates`에서 뺀다. `text`·`item`을 함께 보내면 고친 값으로 확정된다. `source: ai_unverified`·없는 source → 400, `clue`인데 clueId 없음·남의 경험 단서 → 400, 이미 확정된 사실 → 409, 남의 경험 → 404. 확정 전 후보는 `card`에 없고(C1), 확정해도 `itemStatus`는 바뀌지 않는다. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "8386c8d9efedf652e3848e0caf0284296cf49cec"
+    },
+    {
+      "id": "C7-1",
+      "spec": "07-cover-letters.md",
+      "title": "`POST /api/cover-letters` `{title?, body}` → `201 {coverLetter}`(`kind: pasted`, `items: []`, `target: null`), 빈 글·공백만 → 400. `GET /api/cover-letters`는 내 것만 최근 수정순. `PATCH /api/cover-letters/:id`로 title·body 수정(빈 body 400, `generated`에 body → 400). 남의 것 404. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "11fd9f01536ff0781dd4568500675148241cd3e2"
+    },
+    {
+      "id": "C7-2",
+      "spec": "07-cover-letters.md",
+      "title": "`POST /api/cover-letters/generate` `{title?, preferred, talent, questions[]}` → `201`(`kind: generated`, 문항마다 `answer: null`·빈 `recommendations`·빈 `selectedExperienceIds`·빈 `usedExperienceIds`·`answerEdited: false`, `body: null`). `preferred`·`talent` 빈 값, `questions` 0개·빈 문항 → 400. AI를 부르지 않는다. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "aed469f6fe23e97c1047e7ff0086b1ec727c72b1"
+    },
+    {
+      "id": "C7-3",
+      "spec": "07-cover-letters.md",
+      "title": "`POST .../items/:itemId/recommendations`가 확정 사실이 있는 내 경험만 AI에 넘기고(후보만 있는 경험·남의 경험은 입력에 없음), AI가 돌려준 목록에서 후보 집합 밖 id를 버린 뒤 `200 {item}`으로 저장한다. 확정 사실이 있는 경험이 없으면 AI를 부르지 않고 `400 NO_CONFIRMED_FACTS`. AI 실패 → 502, 문항 그대로. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "5227144209510a18285cc6437da52f83c0793222"
+    },
+    {
+      "id": "C7-4",
+      "spec": "07-cover-letters.md",
+      "title": "`PUT .../items/:itemId/experiences` `{experienceIds}`가 선택을 저장하고 `200 {item, usedElsewhere}`를 돌려준다. `usedElsewhere`는 같은 자소서의 다른 문항 `selectedExperienceIds`/`usedExperienceIds`에 있는 경험과 그 문항 id다(막지 않음). 확정 사실 없는 경험 → `400 NO_CONFIRMED_FACTS`(details에 그 경험), 남의 경험 → 404. 추천에 없는 내 경험도 고를 수 있다. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "23e5dc560b40685448c6a9d79ca8504cfd412a55"
+    },
+    {
+      "id": "C7-5",
+      "spec": "07-cover-letters.md",
+      "title": "`POST .../items/:itemId/answer`가 선택 카드의 확정 사실만 AI에 넘기고(후보 문장이 입력에 없음을 FakeAi 기록으로 단언) `answer`·`usedExperienceIds`(=그때의 선택)·`answerEdited: false`를 저장한다. 선택이 비면 400. `PATCH .../items/:itemId` `{answer}`는 `answerEdited: true`(빈 글 400). 고친 응답이 있을 때 `confirmOverwrite: true` 없이 부르면 AI를 부르지 않고 `409 OVERWRITE_CONFIRM_REQUIRED`, 있으면 덮어쓴다. AI 실패 → 502, 기존 응답 그대로. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "2bf3ae8eb9a91e036bb80ede0248ada6f5faa588"
+    },
+    {
+      "id": "C7-6",
+      "spec": "07-cover-letters.md",
+      "title": "`GET /api/cover-letters/:id`가 `{coverLetter, experiences}`를 돌려주고 `experiences`가 모든 문항 `usedExperienceIds`의 합집합(중복 없음)이다. 자소서를 바꾸는 세 API가 모두 하나의 변경 알림 함수를 거친다(단위 테스트로 호출 단언). 어떤 API도 사용자가 `.../answer`를 부르지 않았는데 `answer`를 AI로 바꾸지 않는다(C4, 추천·선택 API 뒤 `answer`가 그대로임을 단언).",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "bb4d303360542c0d7eb49fb3e834efa25778d578"
+    },
+    {
+      "id": "C8-1",
+      "spec": "08-checks.md",
+      "title": "`POST /api/cover-letters/:id/checks` → `201 {check}`(문장마다 `pending`·`followUpsLeft: 3`·빈 `turns`, `stale: false`). 원문에 없는 문장은 버려지고, 생성 자소서는 문장이 든 문항 id가 붙는다. 고를 문장이 없으면 `sentences: []`. `GET /api/checks/:checkId`, `GET /api/cover-letters/:id/checks`(최신순)가 있고 남의 것 404. AI 실패 → 502, 점검 0개 그대로. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "14b37d3d56ec13637f7a1bdec52b497eff1847c1"
+    },
+    {
+      "id": "C8-2",
+      "spec": "08-checks.md",
+      "title": "`POST /api/checks/:checkId/sentences/:sentenceId/start`가 첫 질문을 turn으로 붙이고 `in_progress`로 만든다. 이미 시작한 문장은 AI를 부르지 않고 그대로 돌려준다. `PATCH /cover-letters/:id`·`PATCH .../items/:itemId`·`POST .../items/:itemId/answer` 뒤에는 그 자소서의 기존 점검이 모두 `stale: true`이고, 오래된 점검의 start·answers → `409 CHECK_STALE`. e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "e98cfb8d1bcf03f43f385c2527cd72df18c1f6b9"
+    },
+    {
+      "id": "C8-3",
+      "spec": "08-checks.md",
+      "title": "`POST .../sentences/:sentenceId/answers`의 상태 결정이 위 ①~④ 순서다: FakeAi로 (a) `unknown: true` + J 모두 missing → `unknown` (b) 모두 met → `explained` (c) missing 3번 연속 → 추가 질문 3번 뒤 `needs_more`(첫 질문 포함 turn 4개, `followUpsLeft` 3→0)를 각각 단언한다. 시작 전 `409 SENTENCE_NOT_STARTED`, 끝난 문장 `409 SENTENCE_FINISHED`, 빈 글 400. 응답에 점수 필드가 없다. AI 실패 → 502이고 turn·`followUpsLeft`·후보가 그대로다.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "24cb803993ba7b0295c79ada6a620af5129e1f02"
+    },
+    {
+      "id": "C8-4",
+      "spec": "08-checks.md",
+      "title": "답에서 나온 후보가 `Check.candidates`에 `ai_unverified`로 쌓이고 `newCandidates`로 돌아온다(생성 자소서면 문항 근거 카드 중 하나의 `experienceId`, 붙여넣은 자소서면 `null`). `POST /api/checks/:checkId/candidates/:factId/confirm` `{experienceId, item, text?, source, clueId?}`가 고른 내 경험에 `confirmed`·`origin: check` 사실을 만들고 후보를 목록에서 뺀다. `ai_unverified`·clueId 규칙 위반(다른 경험의 단서 포함) → 400, 남의 경험 → 404, 이미 처리한 후보 → `409 CANDIDATE_RESOLVED`. `DELETE .../candidates/:factId` → 204. 점검 API 어느 것도 자소서 본문·응답을 바꾸지 않는다(C4). e2e 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "f3b0bc4bc7e02b348a9bc0058a31254d45c70a3a"
+    },
+    {
+      "id": "C9-1",
+      "spec": "09-seed.md",
+      "title": "빈 DB(mongodb-memory-server)에서 시드를 돌리면 시드 계정으로 로그인한 `GET /api/experiences`가 위 두 경험을 api.md 모양으로 돌려주고(사실·출처·origin·itemStatus·후보·단서가 mock-data.md와 글자까지 같음), `GET /api/experiences/:id/conversation`이 경험 1에 질문·답이 번갈아 있고 마지막 메시지가 의의를 묻는 AI 질문(`이 경험이 지금 지원에 어떤 의미가 있나요?`), 경험 2에 0개, `GET /api/cover-letters`가 붙여넣은 자소서 1개(본문 글자 일치)를 돌려준다. 시드를 두 번 돌려도 개수가 같다. 테스트 있음.",
+      "docker": false,
+      "status": "pass",
+      "fixCount": 1,
+      "snapshot": "46723bf00940d598c9bb76e405732e7b08d6f088"
+    },
+    {
+      "id": "C9-2",
+      "spec": "09-seed.md",
+      "title": "`docker compose down -v` → `docker compose up -d --build` 뒤 2분 안에 `/__health` 200이고, `curl`로 `POST /api/auth/login`(compose의 시드 이메일·비밀번호) → 토큰, 그 토큰으로 `GET /api/experiences`가 2개, `GET /api/cover-letters`가 1개다. `docker compose restart app` 뒤에도 개수가 같다.",
+      "docker": true,
+      "status": "pass",
+      "fixCount": 0,
+      "snapshot": null
     }
   ],
-  "stage": "05-experiences.md",
+  "stage": "09-seed.md",
   "sweeps": 1
 }
