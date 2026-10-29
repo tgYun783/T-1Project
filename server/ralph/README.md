@@ -15,6 +15,9 @@
 ## 모델
 기본은 세 역할 모두 `opus`(사용량 한도 보호). 바꾸려면 `VERIFY_MODEL=fable server/ralph/ralph.sh`처럼 환경변수로. 사용량 한도·인증 오류가 로그에 보이면 루프는 ledger를 건드리지 않고 멈춘다(exit 3). 한도가 풀리면 같은 명령으로 다시 돌린다.
 
+## 흐름(2단계부터)
+`todo → verify → fail → fix → fixed → confirm(Sonnet) → OK면 pass`. 단계의 모든 주장이 pass면 **스윕**(새 세션 Opus가 그 단계 주장 전부 재검증, 최대 2회) → FAIL만 다시 fix → confirm. 검사와 docker 확인은 스윕에서 한 번만.
+
 ## 돌리는 법 (저장소 루트에서)
 ```bash
 node server/ralph/check.mjs load 01        # 명세 01의 주장을 ledger에 적재(이미 있으면 건너뜀)

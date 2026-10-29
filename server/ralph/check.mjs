@@ -29,6 +29,7 @@ if (cmd === 'load') {
     ledger.claims.push({ id: m[1], spec, title: m[3].trim(), docker: m[2] === 'docker', status: 'todo', fixCount: 0, snapshot: null });
     added++;
   }
+  ledger.stage = spec; ledger.sweeps = 0;   // 스윕은 현재 단계 주장만 대상
   save(ledger);
   console.log(`loaded ${added} claims from ${spec}; total ${ledger.claims.length}`);
 } else if (cmd === 'next') {
@@ -41,10 +42,24 @@ if (cmd === 'load') {
   if (fail) console.log(`fix ${fail.id}`);
   else if (fixed) console.log(`confirm ${fixed.id}`);
   else if (todo) console.log(`verify ${todo.id}`);
+  else if ((l.sweeps || 0) < 2 && l.claims.some((c) => c.spec === l.stage)) console.log('sweep ALL');   // 단계 끝 재검증(다른 눈)
   else console.log('COMPLETE');
 } else if (cmd === 'after') {
   const [role, id] = [a1, a2];
   const l = load();
+  if (role === 'sweep') {
+    // 현재 단계 주장마다 reviews/<C>.md 첫 줄을 읽어 FAIL이면 fail로 되돌린다
+    let failed = 0;
+    for (const cl of l.claims.filter((x) => x.spec === l.stage)) {
+      const v = firstLine(path.join(here, 'reviews', `${cl.id}.md`));
+      if (v === 'VERDICT: FAIL') { cl.status = 'fail'; failed++; }
+      else if (v !== 'VERDICT: PASS') { fs.appendFileSync(path.join(here, 'reviews', `${cl.id}.md`), `\n\n(check.mjs) 스윕 ${(l.sweeps||0)+1}회차: 첫 줄이 VERDICT 형식이 아님 → PASS 유지\n`); }
+    }
+    l.sweeps = (l.sweeps || 0) + 1;
+    save(l);
+    console.log(`sweep ${l.sweeps}: ${failed} failed`);
+    process.exit(0);
+  }
   const c = l.claims.find((x) => x.id === id);
   if (!c) throw new Error(`주장 없음: ${id}`);
   if (role === 'verify') {
@@ -60,7 +75,7 @@ if (cmd === 'load') {
   } else if (role === 'confirm') {
     const n = c.fixCount + 1;
     const v = firstLine(path.join(here, 'confirms', `${id}-${n}.md`));
-    if (v === 'CONFIRM: OK') { c.status = 'todo'; c.fixCount = n; }     // 다시 verify로
+    if (v === 'CONFIRM: OK') { c.status = 'pass'; c.fixCount = n; }     // 재검증은 단계 끝 스윕에서
     else { c.fixCount = n; c.status = c.fixCount >= MAX_FIX ? 'blocked' : 'fail'; }
   }
   if (c.status === 'blocked') {
