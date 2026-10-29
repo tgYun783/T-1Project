@@ -19,8 +19,15 @@ export function sessionSecretFromEnv(): string {
   return secret;
 }
 
+// compose 로컬은 HTTP라 Secure를 켜면 브라우저가 쿠키를 버린다. "false" 문자열을 truthy로 읽지 않도록 'true'만 켠다.
+export function cookieSecureFromEnv(): boolean {
+  return process.env.COOKIE_SECURE?.trim().toLowerCase() === 'true';
+}
+
 // 발급과 삭제(clearCookie)가 같은 옵션을 써야 브라우저가 같은 쿠키로 보고 지운다.
-export const SESSION_COOKIE_OPTIONS = { path: '/', httpOnly: true, sameSite: 'lax' } as const;
+export function sessionCookieOptions() {
+  return { path: '/', httpOnly: true, sameSite: 'lax', secure: cookieSecureFromEnv() } as const;
+}
 
 // 세션을 앱과 같은 Mongo 연결의 sessions 컬렉션에 저장한다: 재시작해도 로그인이 유지되고 연결을 하나만 쓴다.
 export function createSessionMiddleware(connection: Connection): RequestHandler {
@@ -29,7 +36,9 @@ export function createSessionMiddleware(connection: Connection): RequestHandler 
     secret: sessionSecretFromEnv(),
     resave: false,
     saveUninitialized: false,
-    cookie: { ...SESSION_COOKIE_OPTIONS },
+    // HTTPS를 앞단 프록시가 끝내므로 X-Forwarded-Proto를 믿어야 Secure 쿠키가 발급된다.
+    proxy: true,
+    cookie: sessionCookieOptions(),
     store: MongoStore.create({
       client: connection.getClient(),
       dbName: connection.db?.databaseName,

@@ -5,11 +5,18 @@ server {
   # 배포 상태 확인용. releaseId 는 server 가 RELEASE_ID(빌드 때 주입한 commit SHA)로 답한다.
   location = /__health {
     proxy_pass http://server:3000/__health;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
   }
 
   # API 는 NestJS server 로 넘긴다(전역 prefix api 그대로 유지).
+  # 원래 호스트·프로토콜을 넘겨야 server 가 HTTPS 배포에서 Secure 세션 쿠키를 발급한다.
   location /api/ {
     proxy_pass http://server:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
   }
 
   location / {

@@ -129,6 +129,7 @@ cd server && npm run check
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | 로컬 docker 시드 계정 | docker-compose |
 | `AI_GATEWAY_API_KEY` | AI Gateway 키 (필요할 때만) | 배포 환경변수·GitHub Secrets |
 | `SESSION_SECRET` | 세션 쿠키 서명 키 | docker-compose(로컬 전용 값)·배포 환경변수 |
+| `COOKIE_SECURE` | HTTPS 배포에서만 `true`로 세션 쿠키 `Secure` 켜기(기본 false) | docker-compose(`false`)·배포 환경변수 |
 
 변수 이름 목록은 `.env.example`에 있습니다.
 

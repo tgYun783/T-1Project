@@ -24,6 +24,7 @@ describe('C1-1 server skeleton', () => {
     expect(entries.map(([name]) => name).sort()).toEqual(
       [
         'AI_GATEWAY_API_KEY',
+        'COOKIE_SECURE',
         'DATABASE_URL',
         'RELEASE_ID',
         'SEED_USER_EMAIL',

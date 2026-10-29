@@ -4,7 +4,7 @@ import { UserDocument } from '../users/user.schema';
 import { AuthGuard } from './auth.guard';
 import { AuthService, PublicUser, toPublicUser } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
-import { SESSION_COOKIE_OPTIONS } from './session';
+import { sessionCookieOptions } from './session';
 import { parseLoginBody, parseSignupBody } from './signup.validation';
 
 @Controller('auth')
@@ -52,6 +52,6 @@ export class AuthController {
         err ? reject(err instanceof Error ? err : new Error('세션 파기에 실패했습니다.')) : resolve(),
       ),
     );
-    res.clearCookie('sid', SESSION_COOKIE_OPTIONS);
+    res.clearCookie('sid', sessionCookieOptions());
   }
 }

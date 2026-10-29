@@ -52,6 +52,11 @@ describe('C1-5 docker-compose.yml', () => {
     expect(env).toHaveProperty('RELEASE_ID');
   });
 
+  // compose는 HTTP로 뜨므로 Secure 쿠키를 끄지 않으면 브라우저가 sid를 버려 로그인이 유지되지 않는다(C2-5).
+  it('server environment sets COOKIE_SECURE to literal "false"', () => {
+    expect(server.environment?.COOKIE_SECURE).toBe('false');
+  });
+
   // DB가 응답하기 전에 서버가 뜨면 시드·연결이 실패한다.
   it('server waits for healthy db', () => {
     const deps = server.depends_on as Record<string, { condition?: string }>;
@@ -92,6 +97,14 @@ describe('C1-5 deploy/nginx.conf.template', () => {
   it('proxies /__health to server instead of returning directly', () => {
     expect(block('location = /__health {')).toContain('proxy_pass http://server:3000/__health;');
     expect(conf).not.toContain('return 200');
+  });
+
+  // 서버가 원래 프로토콜·호스트를 알아야 HTTPS 배포에서 Secure 세션 쿠키를 발급한다(C2-5 trust proxy와 짝).
+  it.each(['location /api/ {', 'location = /__health {'])('%s forwards Host and X-Forwarded-* headers', (header) => {
+    const body = block(header);
+    expect(body).toContain('proxy_set_header Host $host;');
+    expect(body).toContain('proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;');
+    expect(body).toContain('proxy_set_header X-Forwarded-Proto $scheme;');
   });
 
   it('keeps SPA fallback', () => {

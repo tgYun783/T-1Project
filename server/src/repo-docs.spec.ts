@@ -26,6 +26,11 @@ describe('C1-8 README.md', () => {
   it('환경변수 table lists SESSION_SECRET', () => {
     expect(section(readme, '## 환경변수')).toMatch(/^\| `SESSION_SECRET` \|/m);
   });
+
+  // 배포 담당이 HTTPS에서만 Secure를 켜야 한다는 것을 README만 보고 알 수 있어야 한다(C2-5).
+  it('환경변수 table lists COOKIE_SECURE', () => {
+    expect(section(readme, '## 환경변수')).toMatch(/^\| `COOKIE_SECURE` \|.*false/m);
+  });
 });
 
 type Step = { uses?: string; run?: string; with?: Record<string, unknown>; 'working-directory'?: string };

@@ -23,6 +23,7 @@ services:
       SEED_USER_EMAIL: seeker@example.com
       SEED_USER_PASSWORD: loopthon-2026
       SESSION_SECRET: local-only-session-secret-t1
+      COOKIE_SECURE: "false"
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
     depends_on:
       db:
